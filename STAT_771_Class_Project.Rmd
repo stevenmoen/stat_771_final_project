@@ -118,21 +118,33 @@ for(t in 1:(T-1)){
 
 
 ```{r}
-beta = matrix(nrow = T,ncol=K)
+# beta = matrix(nrow = T,ncol=K)
+beta = beta2 = matrix(nrow = T,ncol=K)
 
 # Initialize beta
 for(k in 1:K){
   beta[T,k] = 1
+  beta2[T,k] = 1
 }
+
 
 # Backwards algorithm
 for(t in (T-1):(T-1)){
+  m = beta2[t+1,] %*% P
 # for(t in (T-1):1){
   for(k in 1:K){
     beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
-    print(beta[t,k])
+    # print(beta[t,k])
+    beta2[t,k] = m[k]*emit(k,X[t+1])
   }
 }
+
+X[200]
+beta[200,]*P[1,]*emit(1:2, X[200])
+
+emit(1:2, X[200])
+tail(beta)
+tail(beta2)
 # emit(1, X[T])
 # P[1,]*emit(1, X[T])
 # emit(1:K, X[T])
@@ -155,7 +167,7 @@ lines(Z==2,col=2,lwd=2)
 # Loss Function Work on 10.27.2020
 
 ```{r}
-# rm(list = ls())
+rm(list = ls())
 ```
 
 
@@ -485,7 +497,7 @@ h= hist(log_test[,2], breaks = 25)
 xfit<-seq(min(log_test[,2]),max(log_test[,2]),length=40)
 yfit<-dnorm(xfit,mean=mean(log_test[,2]),sd=sd(log_test[,2]))
 yfit <- yfit*diff(h$mids[1:2])*length(log_test[,2])
-lines(xfit, yfit2, col="blue", lwd=2)
+lines(xfit, yfit, col="blue", lwd=2)
 
 
 # Find the means and SDs
@@ -501,6 +513,8 @@ colnames(sum_df) <- c("No AR", "SAV")
 
 # Format nicely
 sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each Model", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling()
+
+# log_test
 
 
 ```
@@ -565,13 +579,30 @@ for(t in (T-1):1){
   for(k in 1:K){
     # Modify the value of beta
     # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
-    # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
-    beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+    beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
+    # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
   }
 }
 
-emit(obs = log_test[t+1,], mean = sum_df[1,k], sd = sum_df[2,k])
+# P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
 
+# Problem Solving how to Incorporate this
+
+# c(sum_df[1,1], sum_df[1,2])
+# k
+# p1 = beta[t+1,]
+p1 = beta[250,]
+p1
+# p2 = P[k,]
+p2 = P[1,]
+p3 =emit(obs = log_test[t+1,], mean = c(sum_df[1,1], sum_df[1,2]), sd = c(sum_df[2,1], sum_df[2,2]))
+
+p3
+p1*p2*p3
+
+emit(obs = log_test[t+1,], mean = c(sum_df[1,1], sum_df[1,2]), sd = c(sum_df[2,1], sum_df[2,2]))
+
+dnorm(log_test[t+1,1], sum_df[1,1], sum_df[2,1])
 # beta
 
 ```

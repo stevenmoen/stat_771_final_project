@@ -54,6 +54,10 @@ library(MTS)
 library(plot3D)
 library(citr)
 library(formattable)
+library(fGarch)
+library(ismev)
+library(evd)
+library(LaplacesDemon)
 
 
 # Set up working directory
@@ -433,6 +437,172 @@ colSums(test_loss)
 
 Based on the losses for each model during the last 250 trading days in 2008, it looks like the best options among the candidate model classes [LIST] are model 1 and model 5 specified below [SPECIFY]. Coincidentally, these are the simplest models available. A natural criticism of this approach is that the losses are lower for the CAViaR specifications without lagged predictors. This is a fair point, however, the period of 2008 is a period of extreme crisis, and a simpler, ARMA-style model might seem to work better.
 
+## Problem Solving on Losses
+
+```{r}
+# Extract the data
+small_df = v1_2008_alletf[[1]][,c(1,2,6)]
+
+# Add 1
+small_df2 = small_df + 1
+
+# These fits don't work very well
+hist(log(small_df2[,2]), breaks = 25)
+hist(small_df2[,3], breaks = 25)
+hist(log(small_df2[,3]), breaks = 25)
+hist((small_df[,3]), breaks = 25)
+
+# small_df2
+# ?snormFit
+
+# Let's try another transformation
+t1 = sqrt(max(small_df[,3]+1) - small_df[,3])
+t2 = log10(max(small_df[,3]+1) - small_df[,3])
+t3 = 1/(max(small_df[,3]+1) - small_df[,3])
+
+# Plot the transformations
+# hist(t1, breaks = 25)
+# hist(t2, breaks = 25)
+hist(t3, breaks = 25)
+
+
+```
+
+It looks like we're in a bit of trouble. Let's see what happens.
+
+```{r}
+# Fit a skew normal
+m1 = snormFit(small_df[,2])
+m2 = snormFit(small_df[,3])
+
+# snormFit(small_df[,2]+1)
+# snormFit(small_df[,3]+1)
+# These may not work very well
+
+# square_val = small_df[,3]^2
+# m3 = snormFit(square_val)
+m4 = snormFit(t3)
+m4
+
+
+
+# hist((small_df[,3])^2, breaks = 25)
+```
+
+
+```{r}
+
+
+par(mfrow = c(1,3))
+
+# Let's look at the data
+h = hist(small_df[,2], breaks = 25)
+# Overset a density function
+xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
+lines(xfit, yfit, col="blue", lwd=2)
+
+# Let's look at the second set of data
+h = hist(small_df[,3], breaks = 25)
+# Overset a density function
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="blue", lwd=2)
+
+# # Let's look at the second set of data
+# h = hist(square_val, breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(square_val),max(square_val),length=250)
+# yfit = dsnorm(xfit, mean = m3$par[1], sd = m3$par[2], xi = m3$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(square_val)
+# lines(xfit, yfit, col="blue", lwd=2)
+
+# Let's look at the second set of data
+h = hist(t3, breaks = 25)
+# Overset a density function
+xfit<-seq(min(t3),max(t3),length=250)
+yfit = dsnorm(xfit, mean = m4$par[1], sd = m4$par[2], xi = m4$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(t3)
+lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+We will also try fitting a Gumbel, Fréchet, and a Weibull distribution to the data.
+
+```{r}
+# Fit a gumbel function
+gum_param = gum.fit(small_df[,3])
+gum_param$mle
+
+# Try fitting a GEV distribution
+gev_param = gev.fit(small_df[,3])
+gev_param$mle
+
+# Plot histograms
+# Gumbel
+h = hist(small_df[,3], breaks = 25)
+# Overset a density function
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="blue", lwd=2)
+
+# GEV
+h = hist(small_df[,3], breaks = 25)
+# Overset a density function
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+Now let's compare the K-L divergences.
+
+```{r}
+# First, find the density of the data
+m3_den = hist(small_df[,3], breaks = 25, freq = FALSE)
+m3_den$density
+
+# Next compute the probability at each point for the fitted models
+## Skew-normal
+skn_den = dsnorm(m3_den$mids, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+## Gumbel
+gumb_den = dgumbel(m3_den$mids, loc = gum_param$mle[1], scale = gum_param$mle[2])
+## GEV
+gev_den = dgev(m3_den$mids, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+
+# Calculate the K-L divergences for each
+kl_skn = KLD(m3_den$density, skn_den)
+kl_gumb = KLD(m3_den$density, gumb_den)
+kl_gev = KLD(m3_den$density, gev_den)
+
+# Combine into a data frame
+kl_df = as.data.frame(cbind(kl_skn$mean.sum.KLD, kl_gumb$mean.sum.KLD, kl_gev$mean.sum.KLD))
+
+rownames(kl_df) <- c("Mean Sum K-L Divergence")
+colnames(kl_df) <- c("Skew-Normal", "Gumbel", "GEV")
+
+# Display a pretty table
+kl_df %>% kable(caption = "Comparing K-L Divergences By Model Fits", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Parameters for Each of these Models Were Estimating Using Maximum Likelihood")
+```
+
+Based on these results, we will use the generalized extreme value distribution with the following parameters.
+
+```{r}
+# Take out the optimal parameters
+gev_param_df = as.data.frame(t(gev_param$mle))
+rownames(gev_param_df) <- c("Optimal Parameters")
+colnames(gev_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+```
+
+Now we will use this in our modeling
+
 ## HMM Problem Solving
 
 ```{r}
@@ -463,7 +633,7 @@ Based on the losses for each model during the last 250 trading days in 2008, it 
 # lines(Z,col=2,lwd=2)
 
 # Instead, let's subset our data frame
-small_test = test_loss[,c(1,5)]
+# small_test = test_loss[,c(1,5)]
 # colSums(small_test)
 
 # Set a value of T and K

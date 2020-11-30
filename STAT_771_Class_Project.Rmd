@@ -143,7 +143,12 @@ for(t in (T-1):(T-1)){
   }
 }
 
+is.vector(emit(1:2, X[200]))
+
 X[200]
+
+beta[200,]
+# (2 x 1) x (2 x 1) x (2 x 1)
 beta[200,]*P[1,]*emit(1:2, X[200])
 
 emit(1:2, X[200])
@@ -475,6 +480,8 @@ It looks like we're in a bit of trouble. Let's see what happens.
 m1 = snormFit(small_df[,2])
 m2 = snormFit(small_df[,3])
 
+# m1
+
 # snormFit(small_df[,2]+1)
 # snormFit(small_df[,3]+1)
 # These may not work very well
@@ -502,6 +509,11 @@ xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
 yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
 yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
 lines(xfit, yfit, col="blue", lwd=2)
+# Overset a normal density function
+xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
+yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
+lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
 
 # Let's look at the second set of data
 h = hist(small_df[,3], breaks = 25)
@@ -528,6 +540,8 @@ yfit <- yfit*diff(h$mids[1:2])*length(t3)
 lines(xfit, yfit, col="blue", lwd=2)
 
 ```
+
+It looks like the normal approximation is good enough for us for the first model.
 
 We will also try fitting a Gumbel, Fréchet, and a Weibull distribution to the data.
 
@@ -566,6 +580,10 @@ Now let's compare the K-L divergences.
 m3_den = hist(small_df[,3], breaks = 25, freq = FALSE)
 m3_den$density
 
+# Rewrite m2 as the optimal parameters of skew normal
+sn_params = m2$par
+sn_params
+
 # Next compute the probability at each point for the fitted models
 ## Skew-normal
 skn_den = dsnorm(m3_den$mids, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
@@ -592,6 +610,35 @@ kl_df %>% kable(caption = "Comparing K-L Divergences By Model Fits", digits = 2)
 Based on these results, we will use the generalized extreme value distribution with the following parameters.
 
 ```{r}
+# Below are the optimal parameters for the second model
+norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
+rownames(norm_param_df) <- c("Optimal Parameters")
+colnames(norm_param_df) <- c("Mean", "Standard Deviation")
+
+# Display a pretty table
+norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
+
+sn_params
+
+# Display the optimal skew-normal parameters
+sn_param_df = as.data.frame(t(sn_params))
+rownames(sn_param_df) <- c("Optimal Parameters")
+colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+gum_param$mle
+
+# Display the optimal Gumbel parameters
+gum_param_df = as.data.frame(t(gum_param$mle))
+rownames(gum_param_df) <- c("Optimal Parameters")
+colnames(gum_param_df) <- c("Location", "Scale")
+
+# Display a pretty table
+gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
 # Take out the optimal parameters
 gev_param_df = as.data.frame(t(gev_param$mle))
 rownames(gev_param_df) <- c("Optimal Parameters")
@@ -601,7 +648,7 @@ colnames(gev_param_df) <- c("Location", "Scale", "Shape")
 gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
 ```
 
-Now we will use this in our modeling
+Now we will use this in our modeling below.
 
 ## HMM Problem Solving
 
@@ -637,52 +684,54 @@ Now we will use this in our modeling
 # colSums(small_test)
 
 # Set a value of T and K
-T = nrow(small_test)
-K = ncol(small_test)
+T = nrow(small_df)
+K = ncol(small_df) - 1
+
+# small_df
 
 # Assign a value of P
 P = cbind(c(0.9,0.1),c(0.1,0.9))
 
 # Plot these data
 # ?hist
-par(mfrow= c(1,2))
-hist(small_test[,1], breaks = 25)
-hist(small_test[,2], breaks = 25)
-
-# Transform the dataset
-log_test = log(small_test)
-
-# Plot the logs?
-par(mfrow= c(1,2))
-h= hist(log_test[,1], breaks = 25)
-# Overset a density function
-xfit<-seq(min(log_test[,1]),max(log_test[,1]),length=40)
-yfit<-dnorm(xfit,mean=mean(log_test[,1]),sd=sd(log_test[,1]))
-yfit <- yfit*diff(h$mids[1:2])*length(log_test[,1])
-lines(xfit, yfit, col="blue", lwd=2)
-
-# Repeat the same thing
-h= hist(log_test[,2], breaks = 25)
-# Overset a density function
-xfit<-seq(min(log_test[,2]),max(log_test[,2]),length=40)
-yfit<-dnorm(xfit,mean=mean(log_test[,2]),sd=sd(log_test[,2]))
-yfit <- yfit*diff(h$mids[1:2])*length(log_test[,2])
-lines(xfit, yfit, col="blue", lwd=2)
-
-
-# Find the means and SDs
-v1 = rbind(mean(log_test[,1]), sd(log_test[,1]))
-
-# Find the means and SDs
-v2 = rbind(mean(log_test[,2]), sd(log_test[,2]))
-
-# Store as a data frame
-sum_df = as.data.frame(cbind(v1,v2))
-rownames(sum_df) <- c("Mean", "SD")
-colnames(sum_df) <- c("No AR", "SAV")
-
-# Format nicely
-sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each Model", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling()
+# par(mfrow= c(1,2))
+# hist(small_test[,1], breaks = 25)
+# hist(small_test[,2], breaks = 25)
+# 
+# # Transform the dataset
+# log_test = log(small_test)
+# 
+# # Plot the logs?
+# par(mfrow= c(1,2))
+# h= hist(log_test[,1], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(log_test[,1]),max(log_test[,1]),length=40)
+# yfit<-dnorm(xfit,mean=mean(log_test[,1]),sd=sd(log_test[,1]))
+# yfit <- yfit*diff(h$mids[1:2])*length(log_test[,1])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # Repeat the same thing
+# h= hist(log_test[,2], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(log_test[,2]),max(log_test[,2]),length=40)
+# yfit<-dnorm(xfit,mean=mean(log_test[,2]),sd=sd(log_test[,2]))
+# yfit <- yfit*diff(h$mids[1:2])*length(log_test[,2])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# 
+# # Find the means and SDs
+# v1 = rbind(mean(log_test[,1]), sd(log_test[,1]))
+# 
+# # Find the means and SDs
+# v2 = rbind(mean(log_test[,2]), sd(log_test[,2]))
+# 
+# # Store as a data frame
+# sum_df = as.data.frame(cbind(v1,v2))
+# rownames(sum_df) <- c("Mean", "SD")
+# colnames(sum_df) <- c("No AR", "SAV")
+# 
+# # Format nicely
+# sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each Model", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling()
 
 # log_test
 
@@ -694,11 +743,28 @@ sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each M
 
 ```{r}
 # this is the function Pr(X_t | Z_t=k) for our example
-# We need to modify this
-emit = function(obs,mean, sd){ 
+# This is the emission probability in the "rational world", modified for whether we miss positive or negative
+emit_norm = function(obs,mean, sd){ 
   dnorm(obs, mean = mean, sd = sd)
   # dnorm(x,mean=k,sd=sd)
 }
+
+# Here is where we will input our emission probabilities for a GEV
+emit_gev = function(obs,loc, scale, shape){ 
+  dgev(obs, loc = loc, scale = scale, shape = shape)
+}
+
+# The GEV doesn't have support over all of the real line, which is a problem
+emit_sn = function(obs,loc, scale, shape){ 
+  dsnorm(obs, mean = loc, sd = scale, xi = shape)
+}
+
+# Let's try the Gumbel distribution
+emit_gumb = function(obs,loc, scale){ 
+  dgumbel(obs, loc = loc, scale = scale)
+}
+
+# sn_param_df
 
 # Our prior is that both states are equally likely.
 prior = c(0.5,0.5) #Assumed prior distribution on Z_1
@@ -707,18 +773,37 @@ prior = c(0.5,0.5) #Assumed prior distribution on Z_1
 alpha = matrix(nrow = T,ncol=K)
 
 
-# Initialize alpha[1,]
 # for(k in 1:K){ 
 #   alpha[1,k] = prior[k] * emit(k,X[1])
 # }
 
+# head(small_df)
+# norm_param_df$`Standard Deviation`
+# gev_param_df$Location
+
+# sn_param_df$Location
+
 # Initialize alpha[1,]
 for(k in 1:K){
-  alpha[1,k] = prior[k] * emit(obs = log_test[1,k], mean = sum_df[1,k], sd = sum_df[2,k])
+  if (k == 1){
+    # This is the emission probability assuming normality
+    alpha[1,k] = prior[k] * emit_norm(obs = small_df$SPY[1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+  } else if (k == 2){
+    # This is the emission probability assuming GEV
+    # alpha[1,k] = prior[k] * emit_gev(obs = small_df$SPY[1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+    # This is the emission probability assuming SN
+    # alpha[1,k] = prior[k] * emit_sn(obs = small_df$SPY[1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+    # Third time is the charm...assume a Gumbel
+    alpha[1,k] = prior[k] * emit_gumb(obs = small_df$SPY[1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+  } else {
+    print("k should not be greater than 2")
+  }
 }
 
-# alpha
+head(alpha)
+# small_df$SPY[1]
 # alpha[1,] %*% P
+
 
 # Forward algorithm
 for(t in 1:(T-1)){
@@ -728,9 +813,38 @@ for(t in 1:(T-1)){
   for(k in 1:K){
     # alpha[t+1,k] = m[k]*emit(k,X[t]) what I had
     # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
-    alpha[t+1,k] = m[k]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
+    if (k == 1){
+      # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+      alpha[t+1,k] = m[k]*emit_norm(obs = small_df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+    } else if (k == 2){
+      # Assuming a GEV
+      # alpha[t+1,k] = m[k]*emit_gev(obs = small_df$SPY[t+1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+      # Assuming a skew-normal
+      # alpha[t+1,k] = m[k]*emit_sn(obs = small_df$SPY[t+1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+      # Assuming a Gumbel
+      alpha[t+1,k] = m[k]*emit_gumb(obs = small_df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+    } else {
+      print("k should not be greater than 2")
+    }
+    # alpha[t+1,k] = m[k]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
   }
 }
+
+# emit_gev(obs = small_df$SPY[2], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+# emit_sn(obs = small_df$SPY[2], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+# sn_param_df$Location
+# sn_param_df$Scale
+# sn_param_df$Shape
+
+# dsnorm(small_df$SPY[2], mean = sn_param_df$Location, sd = sn_param_df$Scale, xi = sn_param_df$Shape)
+# hist(rsnorm(10000, mean = sn_param_df$Location, sd = sn_param_df$Scale, xi = sn_param_df$Shape), xlim = c(-2,0))
+
+# Try it with a gumbel
+# dgumbel(small_df$SPY[3], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+
+# small_df$SPY[2]
+
+# alpha
 
 ```
 
@@ -749,31 +863,29 @@ for(t in (T-1):1){
   for(k in 1:K){
     # Modify the value of beta
     # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
-    beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
+    # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
     # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+    if (k == 1){
+      # Here's what was online
+      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+      # Find the values separately
+      v1 = emit_norm(obs = small_df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+      v2 = emit_gumb(obs = small_df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+      beta[t,k] = sum(beta[t+1,]*P[k,]*c(v1, v2))
+    } else if (k == 2){
+      # Here's what was online
+      # Find the values separately
+      v1 = emit_norm(obs = small_df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+      v2 = emit_gumb(obs = small_df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+      beta[t,k] = sum(beta[t+1,]*P[k,]*c(v1, v2))
+    } else {
+      print("k should not be greater than 2")
+    }
   }
 }
 
-# P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
 
-# Problem Solving how to Incorporate this
 
-# c(sum_df[1,1], sum_df[1,2])
-# k
-# p1 = beta[t+1,]
-p1 = beta[250,]
-p1
-# p2 = P[k,]
-p2 = P[1,]
-p3 =emit(obs = log_test[t+1,], mean = c(sum_df[1,1], sum_df[1,2]), sd = c(sum_df[2,1], sum_df[2,2]))
-
-p3
-p1*p2*p3
-
-emit(obs = log_test[t+1,], mean = c(sum_df[1,1], sum_df[1,2]), sd = c(sum_df[2,1], sum_df[2,2]))
-
-dnorm(log_test[t+1,1], sum_df[1,1], sum_df[2,1])
-# beta
 
 ```
 
@@ -783,10 +895,10 @@ dnorm(log_test[t+1,1], sum_df[1,1], sum_df[2,1])
 ab = alpha*beta
 prob = ab/rowSums(ab)
 # rowSums(prob)
+# prob
 
-
-plot(prob[,2],type="l",ylim=c(0,1), main="Posterior probability of state 2 (black);\n Ind(true state is 2) superposed (red)",lwd=2,ylab="posterior probability")
-lines(Z==2,col=2,lwd=2)
+plot(prob[,2],type="l",ylim=c(0,1), main="Chance of Univariate ARMA Dominating",lwd=2,ylab="posterior probability")
+# lines(Z==2,col=2,lwd=2)
 ```
 
 ```{r}

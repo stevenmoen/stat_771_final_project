@@ -16,7 +16,6 @@ quantreg
 MTS
 plot3D
 citr
-Rcpp
 timeDate
 timeSeries
 fBasics
@@ -26,3 +25,4 @@ mgcv
 ismev
 evd
 LaplacesDemon
+Rcpp

@@ -1,5 +1,5 @@
 ---
-title: 'STAT 771 Project - Final Draft'
+title: 'STAT 771 - Project Final Draft'
 author: "Steven Moen"
 date: "Sunday, November 29th, 2020"
 output:
@@ -30,13 +30,8 @@ As encouraging as the results were from my thesis, two important questions remai
 
 To combine these ideas, I would fit a Hidden Markov Model to infer the state of the world - the "rational" one, or the "irrational" one. Given the highly non-normal nature of financial data, I suspect there would be many interesting statistical and computational challenges that would arise with this approach. In addition, it is likely worth exploring alternative ensemble methods to further probe into the seemingly enigmatic nature that pervades financial time series.
 
-The idea is based on a homework assignment I did for Professor Stephen's Dataset. See below. I'll replace the toy dataset with my results. Remember that the red line will not exist in my dataset since it represents the "true" model.
-
 When I implement this, the "rational" state of the world will refer to the predictions of one of the multivariate CAViaR models where as the "irrational" state of the world will refer to one of the predictions from the univariate CAViaR models. One way to possibly implement this is to say that if the losses from the multivariate models are lower, then the HMM will lean towards the rational state of the world, otherwise, it will lean towards the other state.
 
-# Example of HMM
-
-Below are simulations from an HMM where there is a 90% probability of staying in the current state and a 10% chance of switching. Later, I use a forwards-backwards algorithm to estimate the probability of being in any state of the world.
 
 ```{r}
 # Read in relevant libraries
@@ -69,115 +64,115 @@ source('~/Documents/GitHub/CaviaR/caviar_SM.R')
 ```
 
 ```{r}
-# Clean out old variables
-# rm(list=ls())
-
-set.seed(1)
-T = 200
-K = 2
-sd= 0.4
-P = cbind(c(0.9,0.1),c(0.1,0.9))
-# P
-
-# Simulate the latent (Hidden) Markov states
-Z = rep(0,T)
-Z[1] = 1
-for(t in 1:(T-1)){
-  Z[t+1] = sample(K, size=1, prob=P[Z[t],])
-}
-
-# Z
-
-# Simulate the emitted/observed values
-X= rnorm(T,mean=Z,sd=sd)
-# X
-
-plot(X, main="Realization of HMM; latent states shown in red")
-lines(Z,col=2,lwd=2)
+# # Clean out old variables
+# # rm(list=ls())
+# 
+# set.seed(1)
+# T = 200
+# K = 2
+# sd= 0.4
+# P = cbind(c(0.9,0.1),c(0.1,0.9))
+# # P
+# 
+# # Simulate the latent (Hidden) Markov states
+# Z = rep(0,T)
+# Z[1] = 1
+# for(t in 1:(T-1)){
+#   Z[t+1] = sample(K, size=1, prob=P[Z[t],])
+# }
+# 
+# # Z
+# 
+# # Simulate the emitted/observed values
+# X= rnorm(T,mean=Z,sd=sd)
+# # X
+# 
+# plot(X, main="Realization of HMM; latent states shown in red")
+# lines(Z,col=2,lwd=2)
 ```
 
 
 ```{r}
-# this is the function Pr(X_t | Z_t=k) for our example
-emit = function(k,x){ 
-  dnorm(x,mean=k,sd=sd)
-}
-
-prior = c(0.5,0.5) #Assumed prior distribution on Z_1
-
-alpha = matrix(nrow = T,ncol=K)
-
-# Initialize alpha[1,]
-for(k in 1:K){ 
-  alpha[1,k] = prior[k] * emit(k,X[1])
-}
-
-# Forward algorithm
-for(t in 1:(T-1)){
-  m = alpha[t,] %*% P
-  for(k in 1:K){
-    alpha[t+1,k] = m[k]*emit(k,X[t]) 
-  }
-}
+# # this is the function Pr(X_t | Z_t=k) for our example
+# emit = function(k,x){ 
+#   dnorm(x,mean=k,sd=sd)
+# }
+# 
+# prior = c(0.5,0.5) #Assumed prior distribution on Z_1
+# 
+# alpha = matrix(nrow = T,ncol=K)
+# 
+# # Initialize alpha[1,]
+# for(k in 1:K){ 
+#   alpha[1,k] = prior[k] * emit(k,X[1])
+# }
+# 
+# # Forward algorithm
+# for(t in 1:(T-1)){
+#   m = alpha[t,] %*% P
+#   for(k in 1:K){
+#     alpha[t+1,k] = m[k]*emit(k,X[t]) 
+#   }
+# }
 ```
 
 
 ```{r}
-# beta = matrix(nrow = T,ncol=K)
-beta = beta2 = matrix(nrow = T,ncol=K)
-
-# Initialize beta
-for(k in 1:K){
-  beta[T,k] = 1
-  beta2[T,k] = 1
-}
-
-
-# Backwards algorithm
-for(t in (T-1):(T-1)){
-  m = beta2[t+1,] %*% P
-# for(t in (T-1):1){
-  for(k in 1:K){
-    beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
-    # print(beta[t,k])
-    beta2[t,k] = m[k]*emit(k,X[t+1])
-  }
-}
-
-is.vector(emit(1:2, X[200]))
-
-X[200]
-
-beta[200,]
-# (2 x 1) x (2 x 1) x (2 x 1)
-beta[200,]*P[1,]*emit(1:2, X[200])
-
-emit(1:2, X[200])
-tail(beta)
-tail(beta2)
-# emit(1, X[T])
-# P[1,]*emit(1, X[T])
-# emit(1:K, X[T])
-# beta
+# # beta = matrix(nrow = T,ncol=K)
+# beta = beta2 = matrix(nrow = T,ncol=K)
+# 
+# # Initialize beta
+# for(k in 1:K){
+#   beta[T,k] = 1
+#   beta2[T,k] = 1
+# }
+# 
+# 
+# # Backwards algorithm
+# for(t in (T-1):(T-1)){
+#   m = beta2[t+1,] %*% P
+# # for(t in (T-1):1){
+#   for(k in 1:K){
+#     beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+#     # print(beta[t,k])
+#     beta2[t,k] = m[k]*emit(k,X[t+1])
+#   }
+# }
+# 
+# is.vector(emit(1:2, X[200]))
+# 
+# X[200]
+# 
+# beta[200,]
+# # (2 x 1) x (2 x 1) x (2 x 1)
+# beta[200,]*P[1,]*emit(1:2, X[200])
+# 
+# emit(1:2, X[200])
+# tail(beta)
+# tail(beta2)
+# # emit(1, X[T])
+# # P[1,]*emit(1, X[T])
+# # emit(1:K, X[T])
+# # beta
 
 ```
 
 
 ```{r}
-ab = alpha*beta
-prob = ab/rowSums(ab)
-# rowSums(prob)
-
-# sum(prob[41,])
-
-plot(prob[,2],type="l",ylim=c(0,1), main="Posterior probability of state 2 (black);\n Ind(true state is 2) superposed (red)",lwd=2,ylab="posterior probability")
-lines(Z==2,col=2,lwd=2)
+# ab = alpha*beta
+# prob = ab/rowSums(ab)
+# # rowSums(prob)
+# 
+# # sum(prob[41,])
+# 
+# plot(prob[,2],type="l",ylim=c(0,1), main="Posterior probability of state 2 (black);\n Ind(true state is 2) superposed (red)",lwd=2,ylab="posterior probability")
+# lines(Z==2,col=2,lwd=2)
 ```
 
-# Loss Function Work on 10.27.2020
+
 
 ```{r}
-rm(list = ls())
+# rm(list = ls())
 ```
 
 
@@ -272,7 +267,7 @@ plt_data = function(plot_matrix, tau, resp_var, ntest){
     for (i in 1:ncol(plot_matrix)){
       if (i == 1){
         # 4/2/2020 - fixing the index
-        plot.ts(ind_vals,plot_matrix[,i], type = "l", xlab = paste("Days Since", as.Date(start)), ylab = "Approx. Percent Change in PG", ylim = c(min_val,max_val), lwd = 1, main = paste("Predicting", resp_var, "Returns from", as.Date(start), "to", as.Date(end)), sub = paste("The VaR Level is ", 100*tau, "%", "; There are ", ntest, " Trading Days Plotted Above", sep = ""))
+        plot.ts(ind_vals,plot_matrix[,i], type = "l", xlab = paste("Days Since", as.Date(start)), ylab = "Approx. Percent Change in SPY", ylim = c(min_val,max_val), lwd = 1, main = paste("Predicting", resp_var, "Returns from", as.Date(start), "to", as.Date(end)), sub = paste("The VaR Level is ", 100*tau, "%", "; There are ", ntest, " Trading Days Plotted Above", sep = ""))
         # plot.ts(index(plot_matrix), plot_matrix[,i], type = "l", xlab = "Trading Days", ylab = "Percent Change in PG", ylim = c(min_val,max_val), lwd = 1, main = "Predicting PG Returns Over Last 250 Trading Days in 2008", sub = paste("The VaR Level is ", 100*tau, "%", sep = ""))
     } else if(i %in% seq(2,8,1)) {
         lines(ind_vals,plot_matrix[,i], col = i, lty = 2)
@@ -396,6 +391,24 @@ pretty_tables = function(data_mat, loss_list, tau, ntest){
 }
 ```
 
+# Hidden Markov Model Work
+
+Below is arguably the most consequential plot from my M.S. thesis. The reasons for this are because it deals with an important VaR Level - 1%, which in the context of trading days means about the worst day out of 100. The biggest takeaway might be the fact that the four lines dashed lines (corresponding to the multivariate CAViaR model) do not perform as well as the last four lines, which refer to the univariate model. This can also be seen in the table of losses printed below.
+
+## Notation
+
+Below is the notation used later in this paper. Items 2 - 5 listed below are new multivariate CAViaR models developed in this thesis; models 6 - 9 are from the established univariate CAViaR model developed by Engle and Manganelli.
+
+1. SPY: SPY ETF
+2. No AR: Multivariate CAViaR Model with no lags
+3. AR: Multivariate CAViaR Model with $p$ lags
+4. SAV AR: Multivariate CAViaR Model with $p$ absolute value lags
+5. AS AR: Multivariate CAViaR Model with $2p$ lags with asymmetric slopes
+6. SAV: Univariate CAViaR Model with symmetric absolute framework
+7. Asym. Slope: Univariate CAViaR Model with asymmetric slope framework
+8. Ind. GARCH: Univariate CAViaR Model with indirect GARCH framework
+9. Adaptive: Univariate CAViaR Model with adaptive  slope framework
+
 ```{r, results=  'asis'}
 # Call the above function to import data from my thesis
 v1_2008_alletf = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/","var_1pc_2008_all_etf.csv", 0.01, print_graph = 1, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
@@ -416,65 +429,88 @@ test_loss = gen_loss_test(data_mat = v1_2008_alletf[[1]], tau = 0.01)[[3]]
 # ind_vals = index(pc_df) - start
 # print(c(start, end, ind_vals))
 # Find min and maxum values
-max_val = max(test_loss[,1:ncol(test_loss)])
-min_val = min(test_loss[,1:ncol(test_loss)])
-
-# Plot the data
-for (i in 1:ncol(test_loss)){
-    if (i == 1){
-      # Initialize the plot
-      plot.ts(test_loss[,i], type = "l", xlab = "Days Since Jan. 4, 2008", ylab = "Losses for Various Models", ylim = c(min_val,max_val), lwd = 1, lty = 2, main = "Different Losses")
-    } else if(i %in% seq(2,8,1)) {
-        lines(test_loss[,i], col = i, lty = 2)
-    } else {
-        lines(test_loss[,i], col = i, lty = 2)
-    }
-  }
-  # # Define a sequence for plotting
-  plot_seq = seq(1, ncol(test_loss))
-  # # Modifying the code below to fix the legend on 7.31.2020
-  legend("topleft", legend = c(seq(1,8,1)), col = plot_seq, lty= 2, lwd = 2)
+# max_val = max(test_loss[,1:ncol(test_loss)])
+# min_val = min(test_loss[,1:ncol(test_loss)])
+# 
+# # Plot the data
+# for (i in 1:ncol(test_loss)){
+#     if (i == 1){
+#       # Initialize the plot
+#       plot.ts(test_loss[,i], type = "l", xlab = "Days Since Jan. 4, 2008", ylab = "Losses for Various Models", ylim = c(min_val,max_val), lwd = 1, lty = 2, main = "Different Losses")
+#     } else if(i %in% seq(2,8,1)) {
+#         lines(test_loss[,i], col = i, lty = 2)
+#     } else {
+#         lines(test_loss[,i], col = i, lty = 2)
+#     }
+#   }
+#   # # Define a sequence for plotting
+#   plot_seq = seq(1, ncol(test_loss))
+#   # # Modifying the code below to fix the legend on 7.31.2020
+#   legend("topleft", legend = c(seq(1,8,1)), col = plot_seq, lty= 2, lwd = 2)
 ```
 
 ```{r}
 # Let's see the values of the losses
-colSums(test_loss)
+total_loss_df = as.data.frame(t(colSums(test_loss)))
+rownames(total_loss_df) <- c("Losses by Model")
+colnames(total_loss_df) <- colnames(v1_2008_alletf[[1]])[-1]
+
+# Subset the data frames
+first_4 <- total_loss_df[1,1:4]
+last_4 <- total_loss_df[1,5:8]
+
+# Print these out
+first_4 %>% kable(caption = "Losses Over the Last 250 Trading Days in 2008 for the Multivariate CAViaR Models", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
+last_4 %>% kable(caption = "Losses Over the Last 250 Trading Days in 2008 for the Univariate CAViaR Models", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
 ```
 
-Based on the losses for each model during the last 250 trading days in 2008, it looks like the best options among the candidate model classes [LIST] are model 1 and model 5 specified below [SPECIFY]. Coincidentally, these are the simplest models available. A natural criticism of this approach is that the losses are lower for the CAViaR specifications without lagged predictors. This is a fair point, however, the period of 2008 is a period of extreme crisis, and a simpler, ARMA-style model might seem to work better.
+Based on the losses for each model during the last 250 trading days in 2008, it looks like the best options are the multivariate CAViaR model without AR terms for the multivariate model class and the symmetric absolute value model for the univariate model class. The full model specifications can be found in the appendix.
 
-## Problem Solving on Losses
+Coincidentally, these are among the simplest models available among the models plotted above. A natural criticism of this approach is that the losses are lower for the CAViaR specifications without lagged predictors. This is a fair point, however, the period of 2008 is a period of extreme crisis, and a simpler, ARMA-style model might seem to work better other things equal. Future work can extend this work to other periods. Since these are the best two options during this period of interest, the next step is to find reasonable parametric distributions to model their values.
+
+## Finding Distributions of the Forecasts
+
+To fit the Hidden Markov Model, it is necessary to find distributions that appropriately fit the two models above. While the distribution of predictions from the multivariate model is fairly well-approximated by a normal distribution, the distribution of predictions from the univariate model was highly left-skewed, which makes fitting a distribution difficult.
+
+The first step was to try transformations of the aforementioned predictions from the univariate model, namely $\sqrt{\max(x+1) -x}$, $\log_{10} (\max(x+1) -x)$, and $1/(\max(x+1) -x)$ following the suggestions found here [@Kassambara]. While these did (in some cases) eliminate the left-skew, it often created a more pronounced right-skew! Thus, I attempted to model the data without transformation.
+
+There are many candidate distributions that could be used to model the empirical distribution of values from the univariate CAViaR model, but the three that stood out are:
+
+1. The Skew Normal Distribution (parameterized by location, scale, and shape parameters)
+2. The Gumbel Distribution (parameterized by location and scale parameters)
+3. The Generalized Extreme Value Distribution (parameterized by location, scale, and shape parameters)
+
+
 
 ```{r}
 # Extract the data
 small_df = v1_2008_alletf[[1]][,c(1,2,6)]
 
 # Add 1
-small_df2 = small_df + 1
+# small_df2 = small_df + 1
 
 # These fits don't work very well
-hist(log(small_df2[,2]), breaks = 25)
-hist(small_df2[,3], breaks = 25)
-hist(log(small_df2[,3]), breaks = 25)
-hist((small_df[,3]), breaks = 25)
+# hist(log(small_df2[,2]), breaks = 25)
+# hist(small_df2[,3], breaks = 25)
+# hist(log(small_df2[,3]), breaks = 25)
+# hist((small_df[,3]), breaks = 25)
 
 # small_df2
 # ?snormFit
 
 # Let's try another transformation
-t1 = sqrt(max(small_df[,3]+1) - small_df[,3])
-t2 = log10(max(small_df[,3]+1) - small_df[,3])
-t3 = 1/(max(small_df[,3]+1) - small_df[,3])
+# t1 = sqrt(max(small_df[,3]+1) - small_df[,3])
+# t2 = log10(max(small_df[,3]+1) - small_df[,3])
+# t3 = 1/(max(small_df[,3]+1) - small_df[,3])
 
 # Plot the transformations
 # hist(t1, breaks = 25)
 # hist(t2, breaks = 25)
-hist(t3, breaks = 25)
+# hist(t3, breaks = 25)
 
 
 ```
 
-It looks like we're in a bit of trouble. Let's see what happens.
 
 ```{r}
 # Fit a skew normal
@@ -489,8 +525,8 @@ m2 = snormFit(small_df[,3])
 
 # square_val = small_df[,3]^2
 # m3 = snormFit(square_val)
-m4 = snormFit(t3)
-m4
+# m4 = snormFit(t3)
+# m4
 
 
 
@@ -499,12 +535,36 @@ m4
 
 
 ```{r}
+# Fit a gumbel function
+gum_param = gum.fit(small_df[,3], show = FALSE)
+# ?gum.fit
+# gum_param$mle
 
+# Try fitting a GEV distribution
+gev_param = gev.fit(small_df[,3], show = FALSE)
+# gev_param$mle
 
-par(mfrow = c(1,3))
+# # Plot histograms
+# # Gumbel
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # GEV
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+
+par(mfrow = c(1,2))
 
 # Let's look at the data
-h = hist(small_df[,2], breaks = 25)
+h = hist(small_df[,2], breaks = 25, xlab = "Modeled Values", main = "Multivariate CAViaR")
 # Overset a density function
 xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
 yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
@@ -516,74 +576,171 @@ yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
 yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
 lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
 
+# Add a legend
+legend("topleft", legend = c("Normal", "Skew Normal"), col = c("blue", "red"), lty = c(1,2), lwd = c(2,2))
+
+
+
 # Let's look at the second set of data
-h = hist(small_df[,3], breaks = 25)
-# Overset a density function
+h = hist(small_df[,3], breaks = 25, xlab = "Modeled Values", main = "Univariate CAViaR")
+# Overset a density function - Skew Normal
 xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
 yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
 yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
 lines(xfit, yfit, col="blue", lwd=2)
-
-# # Let's look at the second set of data
-# h = hist(square_val, breaks = 25)
-# # Overset a density function
-# xfit<-seq(min(square_val),max(square_val),length=250)
-# yfit = dsnorm(xfit, mean = m3$par[1], sd = m3$par[2], xi = m3$par[3])
-# yfit <- yfit*diff(h$mids[1:2])*length(square_val)
-# lines(xfit, yfit, col="blue", lwd=2)
-
-# Let's look at the second set of data
-h = hist(t3, breaks = 25)
-# Overset a density function
-xfit<-seq(min(t3),max(t3),length=250)
-yfit = dsnorm(xfit, mean = m4$par[1], sd = m4$par[2], xi = m4$par[3])
-yfit <- yfit*diff(h$mids[1:2])*length(t3)
-lines(xfit, yfit, col="blue", lwd=2)
-
-```
-
-It looks like the normal approximation is good enough for us for the first model.
-
-We will also try fitting a Gumbel, Fréchet, and a Weibull distribution to the data.
-
-```{r}
-# Fit a gumbel function
-gum_param = gum.fit(small_df[,3])
-gum_param$mle
-
-# Try fitting a GEV distribution
-gev_param = gev.fit(small_df[,3])
-gev_param$mle
-
-# Plot histograms
-# Gumbel
-h = hist(small_df[,3], breaks = 25)
-# Overset a density function
+# Overset a density function - Gumbel
 xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
 yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
 yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
-lines(xfit, yfit, col="blue", lwd=2)
-
-# GEV
-h = hist(small_df[,3], breaks = 25)
-# Overset a density function
+lines(xfit, yfit, col="red", lwd=2)
+# Overset a density function - GEV
 xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
 yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
 yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
-lines(xfit, yfit, col="blue", lwd=2)
+lines(xfit, yfit, col="green", lwd=2)
+
+# Add a legend
+legend("topleft", legend = c("Skew Normal", "Gumbel", "GEV"), col = c("blue", "red", "green"), lty = c(1,1,1), lwd = c(2,2,2))
+
+# par(mfrow = c(1,3))
+# 
+# # Let's look at the data
+# h = hist(small_df[,2], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+# yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
+# lines(xfit, yfit, col="blue", lwd=2)
+# # Overset a normal density function
+# xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+# yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
+# yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
+# lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
+# 
+# # Let's look at the second set of data
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # # Let's look at the second set of data
+# # h = hist(square_val, breaks = 25)
+# # # Overset a density function
+# # xfit<-seq(min(square_val),max(square_val),length=250)
+# # yfit = dsnorm(xfit, mean = m3$par[1], sd = m3$par[2], xi = m3$par[3])
+# # yfit <- yfit*diff(h$mids[1:2])*length(square_val)
+# # lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # Let's look at the second set of data
+# h = hist(t3, breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(t3),max(t3),length=250)
+# yfit = dsnorm(xfit, mean = m4$par[1], sd = m4$par[2], xi = m4$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(t3)
+# lines(xfit, yfit, col="blue", lwd=2)
 
 ```
 
-Now let's compare the K-L divergences.
+
 
 ```{r}
-# First, find the density of the data
-m3_den = hist(small_df[,3], breaks = 25, freq = FALSE)
-m3_den$density
+# # Fit a gumbel function
+# gum_param = gum.fit(small_df[,3])
+# gum_param$mle
+# 
+# # Try fitting a GEV distribution
+# gev_param = gev.fit(small_df[,3])
+# gev_param$mle
+# 
+# # Plot histograms
+# # Gumbel
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # GEV
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+To fit the above histograms,the optimal parameters were fit using maximum likelihood. Note that while there were convergence issues used in fitting the skew-normal distribution, there were not issues with fitting the Gumbel or the GEV distributions.
+
+```{r}
+# Below are the optimal parameters for the second model
+norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
+rownames(norm_param_df) <- c("Optimal Parameters")
+colnames(norm_param_df) <- c("Mean", "Standard Deviation")
+
+# Display a pretty table
+norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
 
 # Rewrite m2 as the optimal parameters of skew normal
 sn_params = m2$par
-sn_params
+
+# Display the optimal skew-normal parameters
+sn_param_df = as.matrix(t(sn_params))
+# sn_param_df
+# rownames(sn_param_df) <- c("Optimal Parameters")
+# colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+# sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+# gum_param$mle
+
+# Display the optimal Gumbel parameters
+gum_param_df = as.matrix(t(c(gum_param$mle,0)))
+# gum_param_df
+# rownames(gum_param_df) <- c("Optimal Parameters")
+# colnames(gum_param_df) <- c("Location", "Scale")
+
+# Display a pretty table
+# gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
+# Take out the optimal parameters
+gev_param_df = as.matrix(t(gev_param$mle))
+# rownames(gev_param_df) <- c("Optimal Parameters")
+# colnames(gev_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+# gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+# Combine all of the extreme value distributions together
+ev_param_df = as.data.frame(rbind(sn_param_df, gum_param_df, gev_param_df))
+rownames(ev_param_df) <- c("Skew Normal", "Gumbel", "GEV")
+colnames(ev_param_df) <- c("Location", "Scale", "Shape")
+
+# Add a missing value for Gumbel shape
+ev_param_df[2,3] <- NA
+
+# Display a pretty table
+ev_param_df %>% kable(caption = "Optimal Parameters for the Candidate Distributions", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
+```
+
+To evaluate the model fit more rigorously, I compared the Kullback-Leibler divergence for each theoretical distribution.
+
+```{r}
+# First, find the density of the data
+m3_den = hist(small_df[,3], breaks = 25, freq = FALSE, plot = FALSE)
+# ?hist
+# m3_den$density
+
+# Rewrite m2 as the optimal parameters of skew normal
+# sn_params = m2$par
+# sn_params
 
 # Next compute the probability at each point for the fitted models
 ## Skew-normal
@@ -605,53 +762,73 @@ rownames(kl_df) <- c("Mean Sum K-L Divergence")
 colnames(kl_df) <- c("Skew-Normal", "Gumbel", "GEV")
 
 # Display a pretty table
-kl_df %>% kable(caption = "Comparing K-L Divergences By Model Fits", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Parameters for Each of these Models Were Estimating Using Maximum Likelihood")
+kl_df %>% kable(caption = "Comparing K-L Divergences By Model Fits", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
 ```
 
-Based on these results, we will use the generalized extreme value distribution with the following parameters.
+Based on the K-L Divergence, it would seem to make sense to use the generalized extreme value distribution, however, the problem with doing this is the fact that this distribution doesn't have support over the entire real line. Moreover, the Skew-Normal distribution did not work well when fitting the Hidden Markov Model. Therefore, the Gumbel is used in fitting the HMM below.
+
+## HMM Background and Results
+
+The motivating idea behind a Hidden Markov Model is that there are 2 unknown latent states $k$ that generate the data that is seen. (The reference for this information is given here [@Stephens2018]). The algorithm implemented here computes forwards probabilities, $\alpha_{tk} = \mathbb{P}(X_1, ... , X_t; Z_t = k)$. To start, one simply multiplies an equally-weighted prior $\pi_k = 0.5$ by the likelihood of the data given each state, given by $\mathbb{P}(X_1 | Z_1 = k$). 
+
+The likelihood function for the "rational" state (represented by the multivariate CAViaR model) is represented by a normal distribution whereas the likelihood function for the "irrational" state (represented by the univariate CAViaR model) is represented by the Gumbel distribution. Both use the parameters estimated above.
+
+Now, once the $\alpha_1$ value is calculate, $\alpha_2$ is calculated as follows, with a similar process for an arbitrary value $\alpha_t$.
+
+$$
+\alpha_2 = (\alpha_1 P)_k \mathbb{P}(X_2 | Z_2 = k)
+$$
+
+The $P$ symbol corresponds to a symmetric 2x2 transition matrix where the first row is $(0.9, 0.1)$ and the second row is $(0.1, 0.9)$.
+
+
+To compute the backwards probabilities, we compute the following $\beta_{tk} = \mathbb{P}(X_{t+1}, ... , X_T; Z_t = k)$, and then the posterior distribution for each state $Z_t$ is given by the following:
+
+$$
+\mathbb{P}(Z_t = k| X_1, ..., X_T) = \alpha_{tk} \beta_{tk} / \sum_{k}\alpha_{tk} \beta_{tk}
+$$
 
 ```{r}
-# Below are the optimal parameters for the second model
-norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
-rownames(norm_param_df) <- c("Optimal Parameters")
-colnames(norm_param_df) <- c("Mean", "Standard Deviation")
-
-# Display a pretty table
-norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
-
-sn_params
-
-# Display the optimal skew-normal parameters
-sn_param_df = as.data.frame(t(sn_params))
-rownames(sn_param_df) <- c("Optimal Parameters")
-colnames(sn_param_df) <- c("Location", "Scale", "Shape")
-
-# Display a pretty table
-sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
-
-gum_param$mle
-
-# Display the optimal Gumbel parameters
-gum_param_df = as.data.frame(t(gum_param$mle))
-rownames(gum_param_df) <- c("Optimal Parameters")
-colnames(gum_param_df) <- c("Location", "Scale")
-
-# Display a pretty table
-gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
-
-
-# Take out the optimal parameters
-gev_param_df = as.data.frame(t(gev_param$mle))
-rownames(gev_param_df) <- c("Optimal Parameters")
-colnames(gev_param_df) <- c("Location", "Scale", "Shape")
-
-# Display a pretty table
-gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+# # Below are the optimal parameters for the second model
+# norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
+# rownames(norm_param_df) <- c("Optimal Parameters")
+# colnames(norm_param_df) <- c("Mean", "Standard Deviation")
+# 
+# # Display a pretty table
+# norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
+# 
+# # sn_params
+# 
+# # Display the optimal skew-normal parameters
+# sn_param_df = as.data.frame(t(sn_params))
+# rownames(sn_param_df) <- c("Optimal Parameters")
+# colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+# 
+# # Display a pretty table
+# sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+# 
+# # gum_param$mle
+# 
+# # Display the optimal Gumbel parameters
+# gum_param_df = as.data.frame(t(gum_param$mle))
+# rownames(gum_param_df) <- c("Optimal Parameters")
+# colnames(gum_param_df) <- c("Location", "Scale")
+# 
+# # Display a pretty table
+# gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+# 
+# 
+# # Take out the optimal parameters
+# gev_param_df = as.data.frame(t(gev_param$mle))
+# rownames(gev_param_df) <- c("Optimal Parameters")
+# colnames(gev_param_df) <- c("Location", "Scale", "Shape")
+# 
+# # Display a pretty table
+# gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
 ```
 
-Now we will use this in our modeling below.
 
-## HMM Problem Solving
+
 
 ```{r}
 # Clean out old variables
@@ -783,6 +960,8 @@ alpha = matrix(nrow = T,ncol=K)
 # gev_param_df$Location
 
 # sn_param_df$Location
+gum_param_df = ev_param_df[2,1:2]
+# gum_param_df$Location
 
 # Initialize alpha[1,]
 for(k in 1:K){
@@ -801,7 +980,7 @@ for(k in 1:K){
   }
 }
 
-head(alpha)
+# head(alpha)
 # small_df$SPY[1]
 # alpha[1,] %*% P
 
@@ -898,16 +1077,17 @@ prob = ab/rowSums(ab)
 # rowSums(prob)
 # prob
 
-plot(prob[,2],type="l",ylim=c(0,1), main="Chance of Univariate ARMA Dominating",lwd=2,ylab="posterior probability")
+plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability")
 # lines(Z==2,col=2,lwd=2)
 ```
 
+The interpretation of this above graph seems quite clear at first blush - the "hidden" state of the world throughout 2008 is indeed the "irrational" one, marked by the relative success of the univariate CAViaR model. As perhaps with all research, this work generates many more questions than it answers. There are several next steps that are worth exploring.
 
+- Adding more lagged terms into the HMM, or at least tinkering with the transition probability to understand the sensitivity of these parameters to the outcome
+- Exploring what happens if the HMM were fit to all 8 candidate models, or using a Neural Network or Random Forest to find the hidden state
+- Considering the implicit assumption that these forecasts are based on an asymmetric loss function (see the Appendix), and finding a way to weigh the consideration that an overprediction is a fairly clear indication that the world is not in that state
 
-For future work, it might be worth exploring what happens if the HMM were fit to all 8 candidate models.
-
-
-# Changepoint Detection
+## Changepoint Detection
 
 The second question is to understand shifts in the economy using a changepoint detection algorithm:
 
@@ -922,7 +1102,7 @@ $$
 The angle $\theta$ could be plotted over time, and changepoints could be detected using Monte Carlo simulation, because PCA transformations are non-linear, so calculating an analytical density from the transformed data is intractable. Moreover, the data fed into the PCA transformation is non-normal, which further supports the notion of using Monte Carlo simulation to establish reasonable estimates of uncertainty for detected changepoints. As with the first line of reasoning, there would certainly be interesting challenges, particularly in creating crisp null and alternative hypotheses. 
 
 
-# Data Used
+## Data Used
 
 The response variable used in this analysis is SPY, which is an exchange-traded fund that aims to track the performance of the S&P 500, which is discussed above. It is broadly used as a bellwether of the U.S. economy, and has the advantage of avoiding survivorship bias - while an individual stock might go bankrupt or merge with another, it is reasonable to assume that these issues do not apply with an ETF. 
 
@@ -946,7 +1126,7 @@ b. iShares 7-10 Year Treasury Bond Fund (IEF)
 c. iShares 20+ Year Treasury Bond Fund (TLT)
 d. iShares iBoxx $ Investment Grade Corporate Bond ETF (LQD)
 
-# Results
+## Results
 
 
 
@@ -1704,7 +1884,7 @@ many_pca = function(df, num_pts, m, ref_pt = 1, degrees = TRUE, uni_plot = FALSE
 ghi = many_pca(df = pc_df, num_pts = 1250, m = 7, ref_pt = 1)
 
 # nrow(pc_df)
-def = many_pca(df = pc_df, num_pts = 1000, m = 7, ref_pt = 1, uni_plot = TRUE)
+# def = many_pca(df = pc_df, num_pts = 1000, m = 7, ref_pt = 1, uni_plot = TRUE)
 
 # def
 # res_1 = def$resultants[,1]
@@ -1858,7 +2038,7 @@ us_etfs_08 = many_m_pca(c("XLU", "XLP", "XLV", "XLK", "XLY", "XLI", "XLF", "XLB"
 
 ```
 
-A natural criticism of the above fits are that the data is noisy. A complication of this analysis is fact that there isn't necessarily anything to "pin" the data do, because the problem is unsupervised. As such, I think a decent way to picking the wheat from the chaff (or the signal from the noise) is to apply some smoothing filters to the above data. Two options to do so are the moving average smoother and the Lowess smoothers. 
+A natural criticism of the above fits are that the data is noisy. A complication of this analysis is the fact that there isn't necessarily anything to "pin" the data to, because the problem is unsupervised. As such, I think a decent way to picking the wheat from the chaff (or the signal from the noise) is to apply some smoothing filters to the above data. Two options to do so are the moving average smoother and the Lowess smoothers. 
 
 ```{r}
 #' A function to smooth the data
@@ -1912,17 +2092,17 @@ plot_smooth(plot_mat_in = us_etfs_08$plot_matrix, col_num = 4, pc_df_in = us_etf
 In the above plot, I applied a few filters, namely the moving average filter with equal weights for plus/minus 5 days and 10 days as well as the Lowess with a weight of $f = 1/6$ for higher levels of precision. Below are the specifications for moving average with 5 and 10 days, where $x_t$ is the angle between the resultants.
 
 $$
-m_{t,5} = \sum_{j =-5}^5 \frac{1}{11} x_{t-j}
-$$
-$$
-m_{t,10} = \sum_{j =-10}^{10} \frac{1}{21} x_{t-j}
+m_{t,5} = \sum_{j =-5}^5 \frac{1}{11} x_{t-j}, m_{t,10} = \sum_{j =-10}^{10} \frac{1}{21} x_{t-j}
 $$
 
-The Lowess smoother is a smoother that per Shumway and Stoffer [@Shumway2016], is a technique " based on k-nearest neighbors regression, where in one uses only the data $[x_{t-k/2}, ... , x_t, ..., x_{t+k/2}]$ to predict the true value of $x_t$. Based on a visual inspection of the data, it appears that a more precise estimator was in order, so the Lowess function only uses 1/6th of the data.
 
-There are some interesting trends that bear discussion. While some of macroeconomics may appear to be little more than a crystal ball, or a science based upon strong priors, I don't believe that to be the case here. In the above graph is that the angle between resultant vectors for baskets of equity exchange-traded funds (ETFs) for different sectors of the U.S. economy point, almost as a leading indicator, towards the once-in-a-lifetime tumult that was about the grip the U.S. and global financial markets. Indeed, on the graph in the report, the angle of the resultant seems to stabilize for the month of August 2008, which corresponds roughly to the 400 – 425 trading days since the reference point at the end of 2006. This is before Lehman Brothers declared bankruptcy, before AIG was bailed out, and before Congress passed TARP. Now it remains to be seen whether this is coincidental or whether there really is a leading indicator here, but I believe the question is worth asking and worth exploring further.
+The Lowess smoother is a smoother that per Shumway and Stoffer [@Shumway2016], is a technique "based on k-nearest neighbors regression, wherein one uses only the data $[x_{t-k/2}, ... , x_t, ..., x_{t+k/2}]$ to predict the true value of $x_t$. Based on a visual inspection of the data, it appears that a more precise estimator was in order, so the Lowess function only uses 1/6th of the data.
 
-From a statistical perspective, the most important fact about these trends is that the algorithm that produces them, namely PCA, is *an unsupervised learning algorithm*. At no point in this work is there a model of any kind trying to predict gyrations in the S&P500 or the Dow Jones or the Real Economy. Indeed, remember that these principal components are based upon sector ETFs, things like Energy, Consumer Staples, and Utilities, which in turn are based upon individual stocks - companies like Exxon, Capital One, General Electric, and Amazon. These stock prices may seemingly be enigmatic and noisy, but ironically they look this way because according to economic theory, they contain all the relevant information about their company as determined by market participants [@Malkiel2003]. What if, in all of their foresight, they saw the most cataclysmic economic event of our time before it happened, without even aiming to do so?
+There are some interesting trends that bear discussion. While some of macroeconomics may appear to be little more than a crystal ball, or a science based upon strong priors, I don't believe that to be the case here. In the above graph, the angle between resultant vectors calculated from baskets of equity exchange-traded funds (ETFs) for different sectors of the U.S. economy point, almost as a leading indicator, towards the once-in-a-lifetime tumult that was about to grip the U.S. and global financial markets. Indeed, in the graph above, the angle of the resultant seems to stabilize for the month of August 2008, which corresponds roughly to the 400 – 425 trading days since the reference point at the end of 2006. This is before Lehman Brothers declared bankruptcy, before AIG was bailed out, and before Congress passed TARP. It remains to be seen whether this is coincidental or whether there really is a leading indicator here, but I believe the question is worth asking and worth exploring further.
+
+From a statistical perspective, the most important fact about these trends is that the algorithm that produces them, namely PCA, is *an unsupervised learning algorithm*. At no point in this work is there a model of any kind trying to predict gyrations in the S&P500 or the Dow Jones or the real economy. Indeed, remember that these principal components are based upon sector ETFs, things like Energy, Consumer Staples, and Utilities, which in turn are based upon individual stocks - companies like Exxon, Capital One, General Electric, and Amazon. These stock prices may seemingly be enigmatic and noisy, but ironically they look this way because according to economic theory, they are likely to contain all the relevant information about their company as determined by market participants [@Malkiel2003]. What if, in all of their foresight, they saw the most cataclysmic economic event of our time before it happened, without even aiming to do so?
+
+While future work in this area would benefit greatly from a variational autoencoder to be able to figure out what is exactly a meaningful change, it may also benefit from having additional data fed into it.
 
 
 ```{r}
@@ -2013,6 +2193,107 @@ all_etfs_14 = many_m_pca(c("XLU", "XLP", "XLV", "XLK", "XLY", "XLI", "XLF", "XLB
 # Call the above function
 all_etfs_16 = many_m_pca(c("XLU", "XLP", "XLV", "XLK", "XLY", "XLI", "XLF", "XLB", "XLE", "SHY", "IEF", "TLT", "LQD"), resp_var = "SPY", start_date = "2012-01-01", end_date = "2016-12-31", lag_pred = 1, num_pts = 750, ref_pt = 1, low_m = 8)
 ```
+
+
+## Univariate CAViaR Model Specifications
+
+However, work needed to be done to align the diffusion index model with the CAViaR model, which is defined below. The following variables are required for use in the CAViaR model. For ease of notation, these are sourced directly from the Engle and Manganelli 2004 CAViaR paper [@Engle2004], with some added description:
+
+- $(y_t)_{t=1}^T$ is a "vector of portfolio returns"
+- $\theta$ is the "probability associated with VaR" (a 5% VaR would mean $\theta = 0.05$)
+- $\boldsymbol{x_t}$ is a "vector of time $t$ observable variables"
+- $f_t(\boldsymbol{\beta}) \equiv f_t(\boldsymbol{x_{t-1}, \boldsymbol{\beta_\theta}})$ is the "time $t$", "$\theta$ quantile of the distribution of portfolio returns formed at time $t-1$"
+
+The authors then describe a "generic CAViaR specification" as follows:
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_0 + \sum_{i=1}^q \beta_i f_{t-1}(\boldsymbol{\beta}) + \sum_{j=1}^r \beta_{q+j} l(\boldsymbol{x_{t-j}})
+$$
+
+What is interesting about the general setup is that there are two main components to the model - lagged observed variables (represented by $l$) and lagged values of unknown parameters, which in the specification below is used as moving average terms. As such, it is reasonable to generalize the specifications below as nonlinear ARMA models where $y_{t-1}$ terms refer to previous returns, whereas $f_{t-1}(\beta_1)$ terms refer to previous predictions.
+
+
+### Adaptive CAViaR Model
+
+Consider the following model:
+
+$$
+f_t(\beta_1) = f_{t-1}(\beta_1) + \beta_1\left[\left(1+ \exp(G[y_{t-1} - f_{t-1}(\beta_1)])  \right)^{-1} - \theta \right] 
+$$
+
+Following Engle and Manganelli's 2004 paper, we choose $G = 10$, so that is what is used in the results section of this paper. The authors state the reason for the seemingly arbitrary choice is that while "the parameter G itself could be estimated; however, this would go against the spirit of this model, which is simplicity". Previous sensitivity analysis showed that running the adaptive model with $G = 5$ did not materially affect the VaR predictions - the accuracy was not changed. While this model is nonlinear in G and total scale invariance in $G$ would be surprising given the nonlinear relationship, the fact that the other fitted parameters likely adjusted is not surprising.
+
+### Symmetric Absolute Value CAViaR Model
+
+Below is the symmetric absolute value CAViaR model:
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_1 + \beta_2f_{t-1}(\boldsymbol{\beta}) + \beta_3|y_{t-1}|.
+$$
+
+### Asymmetric Slope CAViaR Model
+
+Below is the asymmetric slope CAViaR model:
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_1 + \beta_2f_{t-1}(\boldsymbol{\beta}) + \beta_3(y_{t-1})^+ + \beta_4(y_{t-1})^-.
+$$
+
+### Indirect GARCH (1,1) CAViaR Model
+
+Below is the Indirect GARCH (1,1) model:
+
+$$
+f_t(\boldsymbol{\beta}) = (\beta_1 + \beta_2f_{t-1}^2(\boldsymbol{\beta}) + \beta_3y_{t-1}^2)^{1/2}.
+$$
+
+## Multivariate CAViaR Model Specifications
+
+The multivariate CAViaR model takes inspiration from the models described above in several specifications, as mentioned in the original specifications. The general model form looks like the specification below:
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_0 +\sum_{i=1}^p \beta_i y_{t-i} + \sum_{j=1}^m \beta_{j+p} f_{j,t-1} + e_t.
+$$
+
+As with the univariate CAViaR model, the object of interest is a $\theta$ percentile return and the model is fit iteratively to minimize the loss function on the training data. However, there are some notable differences between the univariate model and the multivariate model. First, there are no moving average terms (lagged error terms) - the reasoning for this is because this model aims for a clear economic interpretation, and crisp interpretations of MA models are harder to create. Also, moving average models require recursive estimation since error terms are not observed, and so developing a method to work with these errors in a robust regression framework is challenging.
+
+Second, in some of the specifications below, there are lagged return variables. This is similar to the univariate CAViaR specification, though there is often more than 1 lag as in the univariate model - there are $p$ lags in the dataset. Third, in all of the specifications below, there are $m$ diffusion indices used in each model lagged by one time step to avoid look-ahead bias.
+
+
+### Multivariate CAViaR: No Lags Model
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_0 +\sum_{j=1}^m \beta_{j} f_{j,t-1} + e_t
+$$
+
+### Multivariate CAViaR with Autoregressive Terms Added
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_0 +\sum_{i=1}^p \beta_i y_{t-i} + \sum_{j=1}^m \beta_{j+p} f_{j,t-1} + e_t
+$$
+
+### Multivariate CAViaR with Symmetric Absolute Value Autoregressive Terms Added
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_0 +\sum_{i=1}^p \beta_i |y_{t-i}| + \sum_{j=1}^m \beta_{j+p} f_{j,t-1} + e_t
+$$
+
+### Multivariate CAViaR with Asymmetric Slope Autoregressive Terms Added
+
+$$
+f_t(\boldsymbol{\beta}) = \beta_0 +\sum_{i=1}^p \beta_i (y_{t-i})_+ + \sum_{j=p+1}^{2p} \beta_i (y_{t-i})_- + \sum_{k=1}^m \beta_{k+2p} f_{k,t-1} + e_t
+$$
+
+
+## Fitting the Models
+
+To fit the models, an optimal value of $m$ diffusion indices and $p$ autoregressive terms are added (or $2p$ in the case of the asymmetric slope model). The optimal values of these parameters are determined using a validation dataset. In all of the runs below, there are a total of 5 years of trading days, or about 1,260 days assuming 252 trading days a year. The adjusted closing prices are logged and differenced, shortening the dataset by one. After doing this, the last 250 data points are reserved as test data, and the 250 data points before that are used as a validation set. Measured by the loss function written out below, the values of $p$ and $m$ that minimize losses are chosen and the optimal model is refit over both the training and the validation data combined and then evaluated on the test data. Note that there is an optimal model which is chosen for each of the four multivariate CAViaR specifications described above, so there are 4 optimal sets of $p$ and $m$ chosen for each set of models. Thus, there are 8 models compared on the test data - 4 univariate CAViaR models and 4 multivariate CAViaR models.
+
+From the CAViaR paper, the $\theta$th regression quantile is defined as any $\boldsymbol{\hat{\beta}}$ that solves the following loss function:
+
+$$
+\overset{argmin}\beta \frac{1}{T}\sum_{t=1}^T [\theta - I(y_t < f_t(\boldsymbol{\beta}))][y_t - f_t(\boldsymbol{\beta})]
+$$
 
 # Code
 

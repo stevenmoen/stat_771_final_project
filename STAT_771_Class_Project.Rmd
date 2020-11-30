@@ -1,6 +1,7 @@
 ---
-title: 'STAT 771 Project - Draft 2'
+title: 'STAT 771 Project - Final Draft'
 author: "Steven Moen"
+date: "Sunday, November 29th, 2020"
 output:
   pdf_document: default
   html_notebook: default
@@ -901,101 +902,7 @@ plot(prob[,2],type="l",ylim=c(0,1), main="Chance of Univariate ARMA Dominating",
 # lines(Z==2,col=2,lwd=2)
 ```
 
-```{r}
-# Now, we need to write everything as a big function
 
-hmm_big = function(which_cols, hist_plots = TRUE, P_alt = NULL){
-  # Subset our data frame using which columns
-  small_test = test_loss[,which_cols]
-  # Set a value of T and K
-  T = nrow(small_test)
-  K = ncol(small_test)
-  # Assign a value of P
-  if (is.null(P_alt)== TRUE){
-    # Assign a 90% chance of staying put
-    P = cbind(c(0.9,0.1),c(0.1,0.9))
-  } else{
-    # Stay where you are
-    P = P_alt
-  }
-  # Transform the dataset
-  log_test = log(small_test)
-  # Plot the data
-  if (hist_plots == TRUE){
-    # Plot these data
-    par(mfrow= c(2,2))
-    # Transform the dataset
-    log_test = log(small_test)
-    # First, the un-transformed histograms
-    hist(small_test[,1], breaks = 25)
-    hist(small_test[,2], breaks = 25)
-    # Plot the data with an overset histogram
-    h= hist(log_test[,1], breaks = 25)
-    # Overset a density function
-    xfit<-seq(min(log_test[,1]),max(log_test[,1]),length=40)
-    yfit<-dnorm(xfit,mean=mean(log_test[,1]),sd=sd(log_test[,1]))
-    yfit <- yfit*diff(h$mids[1:2])*length(log_test[,1])
-    lines(xfit, yfit, col="blue", lwd=2)
-    # Repeat the same thing
-    h= hist(log_test[,2], breaks = 25)
-    # Overset a density function
-    xfit<-seq(min(log_test[,2]),max(log_test[,2]),length=40)
-    yfit<-dnorm(xfit,mean=mean(log_test[,2]),sd=sd(log_test[,2]))
-    yfit <- yfit*diff(h$mids[1:2])*length(log_test[,2])
-    lines(xfit, yfit2, col="blue", lwd=2)
-  }
-  # Find the means and SDs
-  v1 = rbind(mean(log_test[,1]), sd(log_test[,1]))
-  # Find the means and SDs
-  v2 = rbind(mean(log_test[,2]), sd(log_test[,2]))
-  # Store as a data frame
-  sum_df = as.data.frame(cbind(v1,v2))
-  rownames(sum_df) <- c("Mean", "SD")
-  colnames(sum_df) <- c("No AR", "SAV")
-  # Format nicely
-  print(sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each Model", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling())
-  # Now run the HMM
-  # this is the function Pr(X_t | Z_t=k) for our example
-  # We need to modify this
-  emit = function(obs,mean, sd){ 
-    dnorm(obs, mean = mean, sd = sd)
-  }
-  # Our prior is that both states are equally likely.
-  prior = c(0.5,0.5) #Assumed prior distribution on Z_1
-  # The matrix where we store the forwards probabilities
-  alpha = matrix(nrow = T,ncol=K)
-  # Initialize alpha[1,]
-  for(k in 1:K){
-    alpha[1,k] = prior[k] * emit(obs = log_test[1,k], mean = sum_df[1,k], sd = sum_df[2,k])
-  }
-  # Forward algorithm
-  for(t in 1:(T-1)){
-    # Find the value of m at each step
-    m = alpha[t,] %*% P
-    # Loop through to update levels of alpha
-    for(k in 1:K){
-      alpha[t+1,k] = m[k]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
-    }
-  }
-  # Initalize a beta matrix
-  beta = matrix(nrow = T,ncol=K)
-  # Initialize beta
-  for(k in 1:K){
-    beta[T,k] = 1
-  }
-  # Backwards algorithm
-  for(t in (T-1):1){
-    for(k in 1:K){
-      # Modify the value of beta
-      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
-      beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
-    }
-  }
-
-  
-}
-
-```
 
 For future work, it might be worth exploring what happens if the HMM were fit to all 8 candidate models.
 
@@ -2112,5 +2019,144 @@ all_etfs_16 = many_m_pca(c("XLU", "XLP", "XLV", "XLK", "XLY", "XLI", "XLF", "XLB
 The code can be found at the location listed below in the "STAT_771_Class_Project.Rmd" file.
 
 https://github.com/stevenmoen/stat_771_final_project
+
+# Big HMM Function
+
+```{r, eval = FALSE}
+# Now, we need to write everything as a big function
+
+hmm_big = function(df, hist_plots = TRUE, P_alt = NULL){
+  # Subset our data frame using which columns
+  # small_test = test_loss[,which_cols]
+  # Set a value of T and K
+  T = nrow(df)
+  K = ncol(v)
+  # Assign a value of P
+  if (is.null(P_alt)== TRUE){
+    # Assign a 90% chance of staying put
+    P = cbind(c(0.9,0.1),c(0.1,0.9))
+  } else{
+    # Stay where you are
+    P = P_alt
+  }
+  # Transform the dataset
+  # log_test = log(small_test)
+  # Plot the data
+  # if (hist_plots == TRUE){
+  #   # Plot these data
+  #   par(mfrow= c(2,2))
+  #   # Transform the dataset
+  #   log_test = log(small_test)
+  #   # First, the un-transformed histograms
+  #   hist(small_test[,1], breaks = 25)
+  #   hist(small_test[,2], breaks = 25)
+  #   # Plot the data with an overset histogram
+  #   h= hist(log_test[,1], breaks = 25)
+  #   # Overset a density function
+  #   xfit<-seq(min(log_test[,1]),max(log_test[,1]),length=40)
+  #   yfit<-dnorm(xfit,mean=mean(log_test[,1]),sd=sd(log_test[,1]))
+  #   yfit <- yfit*diff(h$mids[1:2])*length(log_test[,1])
+  #   lines(xfit, yfit, col="blue", lwd=2)
+  #   # Repeat the same thing
+  #   h= hist(log_test[,2], breaks = 25)
+  #   # Overset a density function
+  #   xfit<-seq(min(log_test[,2]),max(log_test[,2]),length=40)
+  #   yfit<-dnorm(xfit,mean=mean(log_test[,2]),sd=sd(log_test[,2]))
+  #   yfit <- yfit*diff(h$mids[1:2])*length(log_test[,2])
+  #   lines(xfit, yfit2, col="blue", lwd=2)
+  # }
+  # Find the means and SDs
+  # v1 = rbind(mean(log_test[,1]), sd(log_test[,1]))
+  # Find the means and SDs
+  # v2 = rbind(mean(log_test[,2]), sd(log_test[,2]))
+  # Store as a data frame
+  # sum_df = as.data.frame(cbind(v1,v2))
+  # rownames(sum_df) <- c("Mean", "SD")
+  # colnames(sum_df) <- c("No AR", "SAV")
+  # Format nicely
+  # print(sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each Model", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling())
+  # Now run the HMM
+  # this is the function Pr(X_t | Z_t=k) for our example
+  # We need to modify this
+    # This is the emission probability in the "rational world", modified for whether we miss positive or negative
+  emit_norm = function(obs,mean, sd){ 
+    dnorm(obs, mean = mean, sd = sd)
+  }
+  # # Here is where we will input our emission probabilities for a GEV
+  # emit_gev = function(obs,loc, scale, shape){
+  #   dgev(obs, loc = loc, scale = scale, shape = shape)
+  # }
+  # 
+  # # The GEV doesn't have support over all of the real line, which is a problem
+  # emit_sn = function(obs,loc, scale, shape){ 
+  #   dsnorm(obs, mean = loc, sd = scale, xi = shape)
+  # }
+  # Let's try the Gumbel distribution
+  emit_gumb = function(obs,loc, scale){ 
+    dgumbel(obs, loc = loc, scale = scale)
+  }
+  # Our prior is that both states are equally likely.
+  prior = c(0.5,0.5) #Assumed prior distribution on Z_1
+  # The matrix where we store the forwards probabilities
+  alpha = matrix(nrow = T,ncol=K)
+  # Initialize alpha[1,]
+  for(k in 1:K){
+    if (k == 1){
+      # This is the emission probability assuming normality
+      alpha[1,k] = prior[k] * emit_norm(obs = df$SPY[1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+    } else if (k == 2){
+      # This is the emission probability assuming GEV
+      # alpha[1,k] = prior[k] * emit_gev(obs = small_df$SPY[1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+      # This is the emission probability assuming SN
+      # alpha[1,k] = prior[k] * emit_sn(obs = small_df$SPY[1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+      # Third time is the charm...assume a Gumbel
+      alpha[1,k] = prior[k] * emit_gumb(obs = df$SPY[1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+    } else {
+      print("k should not be greater than 2")
+    }
+  }
+  # Forward algorithm
+  for(t in 1:(T-1)){
+    # Find the value of m at each step
+    m = alpha[t,] %*% P
+    # Loop through to update levels of alpha
+    for(k in 1:K){
+      # alpha[t+1,k] = m[k]*emit(k,X[t]) what I had
+      # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+      if (k == 1){
+        # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+        alpha[t+1,k] = m[k]*emit_norm(obs = df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+      } else if (k == 2){
+        # Assuming a GEV
+        # alpha[t+1,k] = m[k]*emit_gev(obs = small_df$SPY[t+1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+        # Assuming a skew-normal
+        # alpha[t+1,k] = m[k]*emit_sn(obs = small_df$SPY[t+1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+        # Assuming a Gumbel
+        alpha[t+1,k] = m[k]*emit_gumb(obs = df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+      } else {
+        print("k should not be greater than 2")
+      }
+      # alpha[t+1,k] = m[k]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
+    }
+  }
+  # Initalize a beta matrix
+  beta = matrix(nrow = T,ncol=K)
+  # Initialize beta
+  for(k in 1:K){
+    beta[T,k] = 1
+  }
+  # Backwards algorithm
+  for(t in (T-1):1){
+    for(k in 1:K){
+      # Modify the value of beta
+      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+      beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
+    }
+  }
+
+  
+}
+
+```
 
 # Literature Cited

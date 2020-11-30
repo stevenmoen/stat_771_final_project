@@ -17,3 +17,12 @@ MTS
 plot3D
 citr
 Rcpp
+timeDate
+timeSeries
+fBasics
+fGarch
+nlme
+mgcv
+ismev
+evd
+LaplacesDemon

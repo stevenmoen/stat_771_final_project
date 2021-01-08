@@ -11,9 +11,6 @@ link-citations: yes
 
 ```{r global_options, include=FALSE}
 knitr::opts_chunk$set(fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE, cache = TRUE)
-# knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE, cache = TRUE)
-# knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/', warning=FALSE, message=FALSE, cache = TRUE)
-# knitr::opts_chunk$set(fig.path='Figs/', echo=FALSE, warning=FALSE, message=FALSE, cache = TRUE)
 ```
 
 # Background and Motivation
@@ -57,123 +54,10 @@ library(LaplacesDemon)
 
 
 # Set up working directory
-# setwd("~/Documents/GitHub/CaviaR")
-
-# source('caviar_SM.R')
 source('~/Documents/GitHub/CaviaR/caviar_SM.R')
 ```
 
-```{r}
-# # Clean out old variables
-# # rm(list=ls())
-# 
-# set.seed(1)
-# T = 200
-# K = 2
-# sd= 0.4
-# P = cbind(c(0.9,0.1),c(0.1,0.9))
-# # P
-# 
-# # Simulate the latent (Hidden) Markov states
-# Z = rep(0,T)
-# Z[1] = 1
-# for(t in 1:(T-1)){
-#   Z[t+1] = sample(K, size=1, prob=P[Z[t],])
-# }
-# 
-# # Z
-# 
-# # Simulate the emitted/observed values
-# X= rnorm(T,mean=Z,sd=sd)
-# # X
-# 
-# plot(X, main="Realization of HMM; latent states shown in red")
-# lines(Z,col=2,lwd=2)
-```
 
-
-```{r}
-# # this is the function Pr(X_t | Z_t=k) for our example
-# emit = function(k,x){ 
-#   dnorm(x,mean=k,sd=sd)
-# }
-# 
-# prior = c(0.5,0.5) #Assumed prior distribution on Z_1
-# 
-# alpha = matrix(nrow = T,ncol=K)
-# 
-# # Initialize alpha[1,]
-# for(k in 1:K){ 
-#   alpha[1,k] = prior[k] * emit(k,X[1])
-# }
-# 
-# # Forward algorithm
-# for(t in 1:(T-1)){
-#   m = alpha[t,] %*% P
-#   for(k in 1:K){
-#     alpha[t+1,k] = m[k]*emit(k,X[t]) 
-#   }
-# }
-```
-
-
-```{r}
-# # beta = matrix(nrow = T,ncol=K)
-# beta = beta2 = matrix(nrow = T,ncol=K)
-# 
-# # Initialize beta
-# for(k in 1:K){
-#   beta[T,k] = 1
-#   beta2[T,k] = 1
-# }
-# 
-# 
-# # Backwards algorithm
-# for(t in (T-1):(T-1)){
-#   m = beta2[t+1,] %*% P
-# # for(t in (T-1):1){
-#   for(k in 1:K){
-#     beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
-#     # print(beta[t,k])
-#     beta2[t,k] = m[k]*emit(k,X[t+1])
-#   }
-# }
-# 
-# is.vector(emit(1:2, X[200]))
-# 
-# X[200]
-# 
-# beta[200,]
-# # (2 x 1) x (2 x 1) x (2 x 1)
-# beta[200,]*P[1,]*emit(1:2, X[200])
-# 
-# emit(1:2, X[200])
-# tail(beta)
-# tail(beta2)
-# # emit(1, X[T])
-# # P[1,]*emit(1, X[T])
-# # emit(1:K, X[T])
-# # beta
-
-```
-
-
-```{r}
-# ab = alpha*beta
-# prob = ab/rowSums(ab)
-# # rowSums(prob)
-# 
-# # sum(prob[41,])
-# 
-# plot(prob[,2],type="l",ylim=c(0,1), main="Posterior probability of state 2 (black);\n Ind(true state is 2) superposed (red)",lwd=2,ylab="posterior probability")
-# lines(Z==2,col=2,lwd=2)
-```
-
-
-
-```{r}
-# rm(list = ls())
-```
 
 
 
@@ -422,31 +306,6 @@ v1_2008_alletf = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_th
 test_loss = gen_loss_test(data_mat = v1_2008_alletf[[1]], tau = 0.01)[[3]]
 
 
-# Plot the data
-# Define the start and end date
-# start = index(pc_df)[num_pts]
-# end = index(pc_df)[len_df]
-# ind_vals = index(pc_df) - start
-# print(c(start, end, ind_vals))
-# Find min and maxum values
-# max_val = max(test_loss[,1:ncol(test_loss)])
-# min_val = min(test_loss[,1:ncol(test_loss)])
-# 
-# # Plot the data
-# for (i in 1:ncol(test_loss)){
-#     if (i == 1){
-#       # Initialize the plot
-#       plot.ts(test_loss[,i], type = "l", xlab = "Days Since Jan. 4, 2008", ylab = "Losses for Various Models", ylim = c(min_val,max_val), lwd = 1, lty = 2, main = "Different Losses")
-#     } else if(i %in% seq(2,8,1)) {
-#         lines(test_loss[,i], col = i, lty = 2)
-#     } else {
-#         lines(test_loss[,i], col = i, lty = 2)
-#     }
-#   }
-#   # # Define a sequence for plotting
-#   plot_seq = seq(1, ncol(test_loss))
-#   # # Modifying the code below to fix the legend on 7.31.2020
-#   legend("topleft", legend = c(seq(1,8,1)), col = plot_seq, lty= 2, lwd = 2)
 ```
 
 ```{r}
@@ -1079,6 +938,815 @@ prob = ab/rowSums(ab)
 
 plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability")
 # lines(Z==2,col=2,lwd=2)
+```
+
+```{r}
+
+# Bolt on an NA
+norm_param_df2 = cbind(norm_param_df, NA)
+# Rename rows and columns
+rownames(norm_param_df2) <- c("Normal")
+colnames(norm_param_df2) <- c("Location", "Scale", "Shape")
+
+# Combine into an optimal parameter df
+opt_param_df = rbind(norm_param_df2, ev_param_df)
+opt_param_df$Location
+opt_param_df
+
+abc = opt_param_df[c("Normal"),]
+abc$Location
+```
+
+
+```{r}
+#' A function to fit multiple HMMs given an input dataset
+#'
+#' @param input_df - input dataframe
+#' @param t_prob - transition probability
+#' @param prior_prob - prior probability
+#' @param irr_dist - the irrational distribution. Right now, this code is only set up to work with Gumbel
+#' @param rat_dist - rational distribution. Right now, only designed for normal.
+#'
+#' @return
+#' @export
+#'
+#' @examples
+hmm_fit = function(input_df, t_prob, prior_prob, irr_dist = "Gumbel", rat_dist = "Normal"){
+  # Set a value of T and K
+  T = nrow(input_df)
+  K = ncol(input_df) - 1
+  # Initialize optimal parameters for rational and irrational datasets
+  rat_opt_param = opt_param_df[c(rat_dist),]
+  irr_opt_param = opt_param_df[c(irr_dist),]
+  print(rat_opt_param)
+  # Encode the prior
+  prior = c(prior_prob, 1- prior_prob) #Assumed prior distribution on Z_1
+  # Assign a value of P - the transition matrix
+  P = cbind(c(1-t_prob,t_prob),c(t_prob,1-t_prob))
+  # Initialize alpha[1,]
+  for(k in 1:K){
+    if (k == 1){
+      # This is the emission probability in the "rational" world
+      alpha[1,k] = prior[k] * emit_norm(obs = input_df$SPY[1], mean = rat_opt_param$Location, sd = rat_opt_param$Scale)
+    } else if (k == 2){
+      # This is the emission probability assuming GEV
+      # alpha[1,k] = prior[k] * emit_gev(obs = small_df$SPY[1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+      # This is the emission probability assuming SN
+      # alpha[1,k] = prior[k] * emit_sn(obs = small_df$SPY[1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+      # Third time is the charm...assume a Gumbel
+      alpha[1,k] = prior[k] * emit_gumb(obs = input_df$SPY[1], loc = irr_opt_param$Location, scale = irr_opt_param$Scale)
+    } else {
+      print("k should not be greater than 2")
+    }
+  }
+  # Forward algorithm
+  for(t in 1:(T-1)){
+    # Find the value of m at each step
+    m = alpha[t,] %*% P
+    # Loop through to update levels of alpha
+    for(k in 1:K){
+      # alpha[t+1,k] = m[k]*emit(k,X[t]) what I had
+      # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+      if (k == 1){
+        # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+        alpha[t+1,k] = m[k]*emit_norm(obs = input_df$SPY[t+1], mean = rat_opt_param$Location, sd = rat_opt_param$Scale)
+      } else if (k == 2){
+        # Assuming a GEV
+        # alpha[t+1,k] = m[k]*emit_gev(obs = small_df$SPY[t+1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+        # Assuming a skew-normal
+        # alpha[t+1,k] = m[k]*emit_sn(obs = small_df$SPY[t+1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+        # Assuming a Gumbel
+        alpha[t+1,k] = m[k]*emit_gumb(obs = input_df$SPY[t+1], loc = irr_opt_param$Location, scale = irr_opt_param$Scale)
+      } else {
+        print("k should not be greater than 2")
+      }
+      # alpha[t+1,k] = m[k]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
+    }
+  }
+  # Initalize a beta matrix
+  beta = matrix(nrow = T,ncol=K)
+  # Initialize beta
+  for(k in 1:K){
+    beta[T,k] = 1
+  }
+  # Backwards algorithm
+  for(t in (T-1):1){
+    for(k in 1:K){
+      # Modify the value of beta
+      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
+      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+      if (k == 1){
+        # Here's what was online
+        # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+        # Find the values separately
+        v1 = emit_norm(obs = input_df$SPY[t+1], mean = rat_opt_param$Location, sd = rat_opt_param$Scale)
+        v2 = emit_gumb(obs = input_df$SPY[t+1], loc = irr_opt_param$Location, scale = irr_opt_param$Scale)
+        beta[t,k] = sum(beta[t+1,]*P[k,]*c(v1, v2))
+      } else if (k == 2){
+        # Here's what was online
+        # Find the values separately
+        v1 = emit_norm(obs = input_df$SPY[t+1],  mean = rat_opt_param$Location, sd = rat_opt_param$Scale)
+        v2 = emit_gumb(obs = input_df$SPY[t+1],  loc = irr_opt_param$Location, scale = irr_opt_param$Scale)
+        beta[t,k] = sum(beta[t+1,]*P[k,]*c(v1, v2))
+      } else {
+        print("k should not be greater than 2")
+      }
+    }
+  }
+  # Lastly, we need to solve for the posterior
+  ab = alpha*beta
+  prob = ab/rowSums(ab)
+  # Plot the Data  
+  plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability")
+  # lines(Z==2,col=2,lwd=2)
+}
+```
+
+```{r}
+hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel")
+```
+
+# FUNCTIONS
+
+
+```{r, results=  'asis'}
+# Call the above function to import data from my thesis
+v1_2008_alletf1 = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/","var_1pc_2008_all_etf.csv", 0.01, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
+v1_2008_alletf2 = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/","var_1pc_2008_all_etf.csv", 0.05, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
+
+
+# head(v1_2008_alletf1[[1]]) - head(v1_2008_alletf2[[1]])
+
+
+import_dat = function(var_level, year, path = "/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/"){
+  # Import the data frame
+  int_df = var_input_disp(path, paste0("var_", var_level, "pc_", year, "_all_etf.csv"), 0.01, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
+  # Extract the losses
+  losses = gen_loss_test(data_mat = int_df[[1]], tau = var_level/100)[[3]]
+  # Return the losses
+  return(losses)
+}
+
+import_dat(1, 2008)
+
+```
+
+
+```{r}
+# These are the losses generated from our final run
+test_loss = gen_loss_test(data_mat = v1_2008_alletf[[1]], tau = 0.01)[[3]]
+
+
+```
+
+```{r}
+# Let's see the values of the losses
+total_loss_df = as.data.frame(t(colSums(test_loss)))
+rownames(total_loss_df) <- c("Losses by Model")
+colnames(total_loss_df) <- colnames(v1_2008_alletf[[1]])[-1]
+
+# Subset the data frames
+first_4 <- total_loss_df[1,1:4]
+last_4 <- total_loss_df[1,5:8]
+
+# Print these out
+first_4 %>% kable(caption = "Losses Over the Last 250 Trading Days in 2008 for the Multivariate CAViaR Models", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
+last_4 %>% kable(caption = "Losses Over the Last 250 Trading Days in 2008 for the Univariate CAViaR Models", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
+```
+
+Based on the losses for each model during the last 250 trading days in 2008, it looks like the best options are the multivariate CAViaR model without AR terms for the multivariate model class and the symmetric absolute value model for the univariate model class. The full model specifications can be found in the appendix.
+
+Coincidentally, these are among the simplest models available among the models plotted above. A natural criticism of this approach is that the losses are lower for the CAViaR specifications without lagged predictors. This is a fair point, however, the period of 2008 is a period of extreme crisis, and a simpler, ARMA-style model might seem to work better other things equal. Future work can extend this work to other periods. Since these are the best two options during this period of interest, the next step is to find reasonable parametric distributions to model their values.
+
+## Finding Distributions of the Forecasts
+
+To fit the Hidden Markov Model, it is necessary to find distributions that appropriately fit the two models above. While the distribution of predictions from the multivariate model is fairly well-approximated by a normal distribution, the distribution of predictions from the univariate model was highly left-skewed, which makes fitting a distribution difficult.
+
+The first step was to try transformations of the aforementioned predictions from the univariate model, namely $\sqrt{\max(x+1) -x}$, $\log_{10} (\max(x+1) -x)$, and $1/(\max(x+1) -x)$ following the suggestions found here [@Kassambara]. While these did (in some cases) eliminate the left-skew, it often created a more pronounced right-skew! Thus, I attempted to model the data without transformation.
+
+There are many candidate distributions that could be used to model the empirical distribution of values from the univariate CAViaR model, but the three that stood out are:
+
+1. The Skew Normal Distribution (parameterized by location, scale, and shape parameters)
+2. The Gumbel Distribution (parameterized by location and scale parameters)
+3. The Generalized Extreme Value Distribution (parameterized by location, scale, and shape parameters)
+
+
+
+```{r}
+# Extract the data
+small_df = v1_2008_alletf[[1]][,c(1,2,6)]
+
+# Add 1
+# small_df2 = small_df + 1
+
+# These fits don't work very well
+# hist(log(small_df2[,2]), breaks = 25)
+# hist(small_df2[,3], breaks = 25)
+# hist(log(small_df2[,3]), breaks = 25)
+# hist((small_df[,3]), breaks = 25)
+
+# small_df2
+# ?snormFit
+
+# Let's try another transformation
+# t1 = sqrt(max(small_df[,3]+1) - small_df[,3])
+# t2 = log10(max(small_df[,3]+1) - small_df[,3])
+# t3 = 1/(max(small_df[,3]+1) - small_df[,3])
+
+# Plot the transformations
+# hist(t1, breaks = 25)
+# hist(t2, breaks = 25)
+# hist(t3, breaks = 25)
+
+
+```
+
+
+```{r}
+# Fit a skew normal
+m1 = snormFit(small_df[,2])
+m2 = snormFit(small_df[,3])
+
+# m1
+
+# snormFit(small_df[,2]+1)
+# snormFit(small_df[,3]+1)
+# These may not work very well
+
+# square_val = small_df[,3]^2
+# m3 = snormFit(square_val)
+# m4 = snormFit(t3)
+# m4
+
+
+
+# hist((small_df[,3])^2, breaks = 25)
+```
+
+
+```{r}
+# Fit a gumbel function
+gum_param = gum.fit(small_df[,3], show = FALSE)
+# ?gum.fit
+# gum_param$mle
+
+# Try fitting a GEV distribution
+gev_param = gev.fit(small_df[,3], show = FALSE)
+# gev_param$mle
+
+# # Plot histograms
+# # Gumbel
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # GEV
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+
+par(mfrow = c(1,2))
+
+# Let's look at the data
+h = hist(small_df[,2], breaks = 25, xlab = "Modeled Values", main = "Multivariate CAViaR")
+# Overset a density function
+xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
+lines(xfit, yfit, col="blue", lwd=2)
+# Overset a normal density function
+xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
+yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
+lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
+
+# Add a legend
+legend("topleft", legend = c("Normal", "Skew Normal"), col = c("blue", "red"), lty = c(1,2), lwd = c(2,2))
+
+
+
+# Let's look at the second set of data
+h = hist(small_df[,3], breaks = 25, xlab = "Modeled Values", main = "Univariate CAViaR")
+# Overset a density function - Skew Normal
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="blue", lwd=2)
+# Overset a density function - Gumbel
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="red", lwd=2)
+# Overset a density function - GEV
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="green", lwd=2)
+
+# Add a legend
+legend("topleft", legend = c("Skew Normal", "Gumbel", "GEV"), col = c("blue", "red", "green"), lty = c(1,1,1), lwd = c(2,2,2))
+
+# par(mfrow = c(1,3))
+# 
+# # Let's look at the data
+# h = hist(small_df[,2], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+# yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
+# lines(xfit, yfit, col="blue", lwd=2)
+# # Overset a normal density function
+# xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+# yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
+# yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
+# lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
+# 
+# # Let's look at the second set of data
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # # Let's look at the second set of data
+# # h = hist(square_val, breaks = 25)
+# # # Overset a density function
+# # xfit<-seq(min(square_val),max(square_val),length=250)
+# # yfit = dsnorm(xfit, mean = m3$par[1], sd = m3$par[2], xi = m3$par[3])
+# # yfit <- yfit*diff(h$mids[1:2])*length(square_val)
+# # lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # Let's look at the second set of data
+# h = hist(t3, breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(t3),max(t3),length=250)
+# yfit = dsnorm(xfit, mean = m4$par[1], sd = m4$par[2], xi = m4$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(t3)
+# lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+
+
+```{r}
+# # Fit a gumbel function
+# gum_param = gum.fit(small_df[,3])
+# gum_param$mle
+# 
+# # Try fitting a GEV distribution
+# gev_param = gev.fit(small_df[,3])
+# gev_param$mle
+# 
+# # Plot histograms
+# # Gumbel
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # GEV
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+To fit the above histograms,the optimal parameters were fit using maximum likelihood. Note that while there were convergence issues used in fitting the skew-normal distribution, there were not issues with fitting the Gumbel or the GEV distributions.
+
+```{r}
+# Below are the optimal parameters for the second model
+norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
+rownames(norm_param_df) <- c("Optimal Parameters")
+colnames(norm_param_df) <- c("Mean", "Standard Deviation")
+
+# Display a pretty table
+norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
+
+# Rewrite m2 as the optimal parameters of skew normal
+sn_params = m2$par
+
+# Display the optimal skew-normal parameters
+sn_param_df = as.matrix(t(sn_params))
+# sn_param_df
+# rownames(sn_param_df) <- c("Optimal Parameters")
+# colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+# sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+# gum_param$mle
+
+# Display the optimal Gumbel parameters
+gum_param_df = as.matrix(t(c(gum_param$mle,0)))
+# gum_param_df
+# rownames(gum_param_df) <- c("Optimal Parameters")
+# colnames(gum_param_df) <- c("Location", "Scale")
+
+# Display a pretty table
+# gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
+# Take out the optimal parameters
+gev_param_df = as.matrix(t(gev_param$mle))
+# rownames(gev_param_df) <- c("Optimal Parameters")
+# colnames(gev_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+# gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+# Combine all of the extreme value distributions together
+ev_param_df = as.data.frame(rbind(sn_param_df, gum_param_df, gev_param_df))
+rownames(ev_param_df) <- c("Skew Normal", "Gumbel", "GEV")
+colnames(ev_param_df) <- c("Location", "Scale", "Shape")
+
+# Add a missing value for Gumbel shape
+ev_param_df[2,3] <- NA
+
+# Display a pretty table
+ev_param_df %>% kable(caption = "Optimal Parameters for the Candidate Distributions", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
+```
+
+To evaluate the model fit more rigorously, I compared the Kullback-Leibler divergence for each theoretical distribution.
+
+```{r}
+# First, find the density of the data
+m3_den = hist(small_df[,3], breaks = 25, freq = FALSE, plot = FALSE)
+# ?hist
+# m3_den$density
+
+# Rewrite m2 as the optimal parameters of skew normal
+# sn_params = m2$par
+# sn_params
+
+# Next compute the probability at each point for the fitted models
+## Skew-normal
+skn_den = dsnorm(m3_den$mids, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+## Gumbel
+gumb_den = dgumbel(m3_den$mids, loc = gum_param$mle[1], scale = gum_param$mle[2])
+## GEV
+gev_den = dgev(m3_den$mids, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+
+# Calculate the K-L divergences for each
+kl_skn = KLD(m3_den$density, skn_den)
+kl_gumb = KLD(m3_den$density, gumb_den)
+kl_gev = KLD(m3_den$density, gev_den)
+
+# Combine into a data frame
+kl_df = as.data.frame(cbind(kl_skn$mean.sum.KLD, kl_gumb$mean.sum.KLD, kl_gev$mean.sum.KLD))
+
+rownames(kl_df) <- c("Mean Sum K-L Divergence")
+colnames(kl_df) <- c("Skew-Normal", "Gumbel", "GEV")
+
+# Display a pretty table
+kl_df %>% kable(caption = "Comparing K-L Divergences By Model Fits", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
+```
+
+Based on the K-L Divergence, it would seem to make sense to use the generalized extreme value distribution, however, the problem with doing this is the fact that this distribution doesn't have support over the entire real line. Moreover, the Skew-Normal distribution did not work well when fitting the Hidden Markov Model. Therefore, the Gumbel is used in fitting the HMM below.
+
+## HMM Background and Results
+
+The motivating idea behind a Hidden Markov Model is that there are 2 unknown latent states $k$ that generate the data that is seen. (The reference for this information is given here [@Stephens2018]). The algorithm implemented here computes forwards probabilities, $\alpha_{tk} = \mathbb{P}(X_1, ... , X_t; Z_t = k)$. To start, one simply multiplies an equally-weighted prior $\pi_k = 0.5$ by the likelihood of the data given each state, given by $\mathbb{P}(X_1 | Z_1 = k$). 
+
+The likelihood function for the "rational" state (represented by the multivariate CAViaR model) is represented by a normal distribution whereas the likelihood function for the "irrational" state (represented by the univariate CAViaR model) is represented by the Gumbel distribution. Both use the parameters estimated above.
+
+Now, once the $\alpha_1$ value is calculate, $\alpha_2$ is calculated as follows, with a similar process for an arbitrary value $\alpha_t$.
+
+$$
+\alpha_2 = (\alpha_1 P)_k \mathbb{P}(X_2 | Z_2 = k)
+$$
+
+The $P$ symbol corresponds to a symmetric 2x2 transition matrix where the first row is $(0.9, 0.1)$ and the second row is $(0.1, 0.9)$.
+
+
+To compute the backwards probabilities, we compute the following $\beta_{tk} = \mathbb{P}(X_{t+1}, ... , X_T; Z_t = k)$, and then the posterior distribution for each state $Z_t$ is given by the following:
+
+$$
+\mathbb{P}(Z_t = k| X_1, ..., X_T) = \alpha_{tk} \beta_{tk} / \sum_{k}\alpha_{tk} \beta_{tk}
+$$
+
+```{r}
+# # Below are the optimal parameters for the second model
+# norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
+# rownames(norm_param_df) <- c("Optimal Parameters")
+# colnames(norm_param_df) <- c("Mean", "Standard Deviation")
+# 
+# # Display a pretty table
+# norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
+# 
+# # sn_params
+# 
+# # Display the optimal skew-normal parameters
+# sn_param_df = as.data.frame(t(sn_params))
+# rownames(sn_param_df) <- c("Optimal Parameters")
+# colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+# 
+# # Display a pretty table
+# sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+# 
+# # gum_param$mle
+# 
+# # Display the optimal Gumbel parameters
+# gum_param_df = as.data.frame(t(gum_param$mle))
+# rownames(gum_param_df) <- c("Optimal Parameters")
+# colnames(gum_param_df) <- c("Location", "Scale")
+# 
+# # Display a pretty table
+# gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+# 
+# 
+# # Take out the optimal parameters
+# gev_param_df = as.data.frame(t(gev_param$mle))
+# rownames(gev_param_df) <- c("Optimal Parameters")
+# colnames(gev_param_df) <- c("Location", "Scale", "Shape")
+# 
+# # Display a pretty table
+# gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+```
+
+
+
+
+```{r}
+# Clean out old variables
+# rm(list=ls())
+
+# This is the true model used in the simulation study. We won't need it.
+# set.seed(1)
+# T = 200
+# K = 2
+# sd= 0.4
+# P = cbind(c(0.9,0.1),c(0.1,0.9))
+
+# Simulate the latent (Hidden) Markov states
+# Also not needed.
+# Z = rep(0,T)
+# Z[1] = 1
+# for(t in 1:(T-1)){
+#   Z[t+1] = sample(K, size=1, prob=P[Z[t],])
+# }
+
+
+# Simulate the emitted/observed values
+# X= rnorm(T,mean=Z,sd=sd)
+# X
+
+# plot(X, main="Realization of HMM; latent states shown in red")
+# lines(Z,col=2,lwd=2)
+
+# Instead, let's subset our data frame
+# small_test = test_loss[,c(1,5)]
+# colSums(small_test)
+
+# Set a value of T and K
+T = nrow(small_df)
+K = ncol(small_df) - 1
+
+# small_df
+
+# Assign a value of P
+P = cbind(c(0.9,0.1),c(0.1,0.9))
+
+# Plot these data
+# ?hist
+# par(mfrow= c(1,2))
+# hist(small_test[,1], breaks = 25)
+# hist(small_test[,2], breaks = 25)
+# 
+# # Transform the dataset
+# log_test = log(small_test)
+# 
+# # Plot the logs?
+# par(mfrow= c(1,2))
+# h= hist(log_test[,1], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(log_test[,1]),max(log_test[,1]),length=40)
+# yfit<-dnorm(xfit,mean=mean(log_test[,1]),sd=sd(log_test[,1]))
+# yfit <- yfit*diff(h$mids[1:2])*length(log_test[,1])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # Repeat the same thing
+# h= hist(log_test[,2], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(log_test[,2]),max(log_test[,2]),length=40)
+# yfit<-dnorm(xfit,mean=mean(log_test[,2]),sd=sd(log_test[,2]))
+# yfit <- yfit*diff(h$mids[1:2])*length(log_test[,2])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# 
+# # Find the means and SDs
+# v1 = rbind(mean(log_test[,1]), sd(log_test[,1]))
+# 
+# # Find the means and SDs
+# v2 = rbind(mean(log_test[,2]), sd(log_test[,2]))
+# 
+# # Store as a data frame
+# sum_df = as.data.frame(cbind(v1,v2))
+# rownames(sum_df) <- c("Mean", "SD")
+# colnames(sum_df) <- c("No AR", "SAV")
+# 
+# # Format nicely
+# sum_df %>% kable(caption = "Summary Statistics for the Log of Losses from Each Model", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling()
+
+# log_test
+
+
+```
+
+
+
+
+```{r}
+# this is the function Pr(X_t | Z_t=k) for our example
+# This is the emission probability in the "rational world", modified for whether we miss positive or negative
+emit_norm = function(obs,mean, sd){ 
+  dnorm(obs, mean = mean, sd = sd)
+  # dnorm(x,mean=k,sd=sd)
+}
+
+# Here is where we will input our emission probabilities for a GEV
+emit_gev = function(obs,loc, scale, shape){ 
+  dgev(obs, loc = loc, scale = scale, shape = shape)
+}
+
+# The GEV doesn't have support over all of the real line, which is a problem
+emit_sn = function(obs,loc, scale, shape){ 
+  dsnorm(obs, mean = loc, sd = scale, xi = shape)
+}
+
+# Let's try the Gumbel distribution
+emit_gumb = function(obs,loc, scale){ 
+  dgumbel(obs, loc = loc, scale = scale)
+}
+
+# sn_param_df
+
+# Our prior is that both states are equally likely.
+prior = c(0.5,0.5) #Assumed prior distribution on Z_1
+
+# The matrix where we store the forwards probabilities
+alpha = matrix(nrow = T,ncol=K)
+
+
+# for(k in 1:K){ 
+#   alpha[1,k] = prior[k] * emit(k,X[1])
+# }
+
+# head(small_df)
+# norm_param_df$`Standard Deviation`
+# gev_param_df$Location
+
+# sn_param_df$Location
+gum_param_df = ev_param_df[2,1:2]
+# gum_param_df$Location
+
+# Initialize alpha[1,]
+for(k in 1:K){
+  if (k == 1){
+    # This is the emission probability assuming normality
+    alpha[1,k] = prior[k] * emit_norm(obs = small_df$SPY[1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+  } else if (k == 2){
+    # This is the emission probability assuming GEV
+    # alpha[1,k] = prior[k] * emit_gev(obs = small_df$SPY[1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+    # This is the emission probability assuming SN
+    # alpha[1,k] = prior[k] * emit_sn(obs = small_df$SPY[1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+    # Third time is the charm...assume a Gumbel
+    alpha[1,k] = prior[k] * emit_gumb(obs = small_df$SPY[1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+  } else {
+    print("k should not be greater than 2")
+  }
+}
+
+# head(alpha)
+# small_df$SPY[1]
+# alpha[1,] %*% P
+
+
+# Forward algorithm
+for(t in 1:(T-1)){
+  # Find the value of m at each step
+  m = alpha[t,] %*% P
+  # Loop through to update levels of alpha
+  for(k in 1:K){
+    # alpha[t+1,k] = m[k]*emit(k,X[t]) what I had
+    # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+    if (k == 1){
+      # alpha[t+1,k] = m[k]*emit(k,X[t+1]) online
+      alpha[t+1,k] = m[k]*emit_norm(obs = small_df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+    } else if (k == 2){
+      # Assuming a GEV
+      # alpha[t+1,k] = m[k]*emit_gev(obs = small_df$SPY[t+1], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+      # Assuming a skew-normal
+      # alpha[t+1,k] = m[k]*emit_sn(obs = small_df$SPY[t+1], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+      # Assuming a Gumbel
+      alpha[t+1,k] = m[k]*emit_gumb(obs = small_df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+    } else {
+      print("k should not be greater than 2")
+    }
+    # alpha[t+1,k] = m[k]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k])
+  }
+}
+
+# emit_gev(obs = small_df$SPY[2], loc = gev_param_df$Location, scale = gev_param_df$Scale, shape = gev_param_df$Shape)
+# emit_sn(obs = small_df$SPY[2], loc = sn_param_df$Location, scale = sn_param_df$Scale, shape = sn_param_df$Shape)
+# sn_param_df$Location
+# sn_param_df$Scale
+# sn_param_df$Shape
+
+# dsnorm(small_df$SPY[2], mean = sn_param_df$Location, sd = sn_param_df$Scale, xi = sn_param_df$Shape)
+# hist(rsnorm(10000, mean = sn_param_df$Location, sd = sn_param_df$Scale, xi = sn_param_df$Shape), xlim = c(-2,0))
+
+# Try it with a gumbel
+# dgumbel(small_df$SPY[3], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+
+# small_df$SPY[2]
+
+# alpha
+
+```
+
+
+```{r}
+# Initalize a beta matrix
+beta = matrix(nrow = T,ncol=K)
+
+# Initialize beta
+for(k in 1:K){
+  beta[T,k] = 1
+}
+
+# Backwards algorithm
+for(t in (T-1):1){
+  for(k in 1:K){
+    # Modify the value of beta
+    # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+    # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(obs = log_test[t+1,k], mean = sum_df[1,k], sd = sum_df[2,k]))
+    # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+    if (k == 1){
+      # Here's what was online
+      # beta[t,k] = sum(beta[t+1,]*P[k,]*emit(1:K,X[t+1]))
+      # Find the values separately
+      v1 = emit_norm(obs = small_df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+      v2 = emit_gumb(obs = small_df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+      beta[t,k] = sum(beta[t+1,]*P[k,]*c(v1, v2))
+    } else if (k == 2){
+      # Here's what was online
+      # Find the values separately
+      v1 = emit_norm(obs = small_df$SPY[t+1], mean = norm_param_df$Mean, sd = norm_param_df$`Standard Deviation`)
+      v2 = emit_gumb(obs = small_df$SPY[t+1], loc = gum_param_df$Location, scale = gum_param_df$Scale)
+      beta[t,k] = sum(beta[t+1,]*P[k,]*c(v1, v2))
+    } else {
+      print("k should not be greater than 2")
+    }
+  }
+}
+
+
+
+
+```
+
+
+```{r}
+# Lastly, we need to solve for the posterior
+ab = alpha*beta
+prob = ab/rowSums(ab)
+# rowSums(prob)
+# prob
+
+plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability")
+# lines(Z==2,col=2,lwd=2)
+```
+
+```{r}
+
+# Bolt on an NA
+norm_param_df2 = cbind(norm_param_df, NA)
+# Rename rows and columns
+rownames(norm_param_df2) <- c("Normal")
+colnames(norm_param_df2) <- c("Location", "Scale", "Shape")
+
+# Combine into an optimal parameter df
+opt_param_df = rbind(norm_param_df2, ev_param_df)
+opt_param_df$Location
+opt_param_df
+
+abc = opt_param_df[c("Normal"),]
+abc$Location
 ```
 
 The interpretation of this above graph seems quite clear at first blush - the "hidden" state of the world throughout 2008 is indeed the "irrational" one, marked by the relative success of the univariate CAViaR model. As perhaps with all research, this work generates many more questions than it answers. There are several next steps that are worth exploring.

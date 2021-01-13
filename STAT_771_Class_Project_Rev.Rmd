@@ -1074,11 +1074,21 @@ hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel"
 # Call the above function to import data from my thesis
 v1_2008_alletf1 = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/","var_1pc_2008_all_etf.csv", 0.01, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
 v1_2008_alletf2 = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/","var_1pc_2008_all_etf.csv", 0.05, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
+```
 
 
-# head(v1_2008_alletf1[[1]]) - head(v1_2008_alletf2[[1]])
 
-
+```{r}
+#' This is a function to read in the losses from previous years
+#'
+#' @param var_level - the VaR level as an integer
+#' @param year - the year to read in. 2008, 2010, 2014, and 2016.
+#' @param path - the path to the files. You probably shouldn't change this.
+#'
+#' @return - the losses by year
+#' @export
+#'
+#' @examples - import_dat(1, 2008)
 import_dat = function(var_level, year, path = "/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/"){
   # Import the data frame
   int_df = var_input_disp(path, paste0("var_", var_level, "pc_", year, "_all_etf.csv"), 0.01, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
@@ -1088,7 +1098,8 @@ import_dat = function(var_level, year, path = "/Users/stevenmoen/Documents/GitHu
   return(losses)
 }
 
-import_dat(1, 2008)
+abc = import_dat(1, 2008)
+colSums(abc)
 
 ```
 

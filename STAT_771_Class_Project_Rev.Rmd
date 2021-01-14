@@ -1094,21 +1094,404 @@ import_dat = function(var_level, year, path = "/Users/stevenmoen/Documents/GitHu
   int_df = var_input_disp(path, paste0("var_", var_level, "pc_", year, "_all_etf.csv"), 0.01, print_graph = 0, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
   # Extract the losses
   losses = gen_loss_test(data_mat = int_df[[1]], tau = var_level/100)[[3]]
+  # Assign the predictions
+  preds = int_df[[1]]
   # Return the losses
-  return(losses)
+  return(list(preds = preds, losses = losses))
 }
 
-abc = import_dat(1, 2008)
-colSums(abc)
+# v1_2008_alletf
+
+dat1 = import_dat(1, 2008)
+# abc
+# abcde =colSums(abc)
+# abcde
+# 
+# which.min(abcde[1:8])
+```
+
+
+```{r}
+#' A function that chooses the optimal models
+#'
+#' @param loss_mat - loss matrix from previous code
+#'
+#' @return - the optimal models for the HMM
+#' @export
+#'
+#' @examples - pick_best(dat1)
+pick_best = function(loss_mat){
+  # Find the column sums
+  cs = colSums(loss_mat)
+  # Subset into two - rational and irrational parts (split in two)
+  rat_sum = cs[1:4]
+  irr_sum = cs[5:8]
+  # Find the minimizer of each set
+  rat_min = which.min(rat_sum)
+  # Add 4 for the offset
+  irr_min = which.min(irr_sum) + 4
+  # print(c(rat_min, irr_min))
+  # Return the optimal pairs
+  return(c(rat_min, irr_min))
+}
+
+best = pick_best(dat1$losses)
+
+c(1,best+1)
+# These are the losses generated from our final run
+# test_loss = gen_loss_test(data_mat = v1_2008_alletf[[1]], tau = 0.01)[[3]]
+
+
+```
+
+```{r}
+# Subset the data
+
+#' A function to subset the data and print the optimal models
+#'
+#' @param opt_params - the optimal parameters from the pick_best function
+#' @param init_df - the initial data frame to read off of
+#' @param print_best_mods - print the best models that will go through the optimization process
+#'
+#' @return - a subsetted data frame
+#' @export
+#'
+#' @examples - test_df = small_df_fn(best, dat1$preds, print_best_mods = 1)
+small_df_fn = function(opt_params, init_df, print_best_mods = 0){
+  # Select the SP500 and the optimal columsn from earlier
+  small_df= init_df[,c(1,opt_params+1)]
+  # Print the optimal parameters
+  if (print_best_mods != 0){
+    print(paste0("The best multivariate CAViaR model for the time period from ",
+                  min(index(small_df)), " to ", max(index(small_df))," is ", colnames(small_df)[2], 
+                 " and the best univariate CAViaR model for the time period is ", colnames(small_df)[3]))
+  }
+  # Return the data frame
+  return(small_df)
+}
+
+small_df1 = small_df_fn(best, dat1$preds, print_best_mods = 1)
+
+
+# test_df = small_df_fn(best, dat1$preds, print_best_mods = 1)
+
+
+
+
+```
+
+```{r}
+# Fit models for the univariate CAViaR models
+uv_cav_fit = function(input_df){
+  # Fit skew normal
+  sn_param = snormFit(input_df[,3])
+  # Fit Gumbel
+  gum_param = gum.fit(input_df[,3], show = FALSE)
+  # Plot the data
+  h = hist(input_df[,3], breaks = 25, xlab = "Modeled Values", main = "Univariate CAViaR")
+  # Overset a density function - Skew Normal
+  xfit<-seq(min(input_df[,3]),max(input_df[,3]),length=250)
+  yfit = dsnorm(xfit, mean = sn_param$par[1], sd = sn_param$par[2], xi = sn_param$par[3])
+  yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+  lines(xfit, yfit, col="blue", lwd=2)
+  # Overset a density function - Gumbel
+  xfit<-seq(min(input_df[,3]),max(input_df[,3]),length=250)
+  yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+  yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+  lines(xfit, yfit, col="red", lwd=2)
+  # Overset a density function - GEV
+  # xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+  # yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+  # yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+  # lines(xfit, yfit, col="green", lwd=2)
+  # Add a legend
+  legend("topleft", legend = c("Skew Normal", "Gumbel"), col = c("blue", "red"), lty = c(1,1,1), lwd = c(2,2,2))
+  
+  # Combine all of the extreme value distributions together
+  ev_param_df = as.data.frame(rbind(sn_param_df, gum_param_df, gev_param_df))
+  rownames(ev_param_df) <- c("Skew Normal", "Gumbel", "GEV")
+  colnames(ev_param_df) <- c("Location", "Scale", "Shape")
+  # Rewrite m2 as the optimal parameters of skew normal
+  sn_params = m2$par
+  
+  # Display the optimal skew-normal parameters
+  sn_param_df = as.matrix(t(sn_params))
+  # sn_param_df
+  # rownames(sn_param_df) <- c("Optimal Parameters")
+  # colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+  
+  # Display a pretty table
+  # sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+  
+  # gum_param$mle
+  
+  # Display the optimal Gumbel parameters
+  gum_param_df = as.matrix(t(c(gum_param$mle,0)))
+  
+  # Add a missing value for Gumbel shape
+  ev_param_df[2,3] <- NA
+  
+  # Display a pretty table
+  ev_param_df %>% kable(caption = "Optimal Parameters for the Candidate Distributions", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+}
+
+uv_cav_fit(small_df1)
+
 
 ```
 
 
 ```{r}
-# These are the losses generated from our final run
-test_loss = gen_loss_test(data_mat = v1_2008_alletf[[1]], tau = 0.01)[[3]]
+# Fit a skew normal
+m1 = snormFit(small_df[,2])
+m2 = snormFit(small_df[,3])
+
+# m1
+
+# snormFit(small_df[,2]+1)
+# snormFit(small_df[,3]+1)
+# These may not work very well
+
+# square_val = small_df[,3]^2
+# m3 = snormFit(square_val)
+# m4 = snormFit(t3)
+# m4
 
 
+
+# hist((small_df[,3])^2, breaks = 25)
+```
+
+
+```{r}
+# Fit a gumbel function
+gum_param = gum.fit(small_df[,3], show = FALSE)
+# ?gum.fit
+# gum_param$mle
+
+# Try fitting a GEV distribution
+gev_param = gev.fit(small_df[,3], show = FALSE)
+# gev_param$mle
+
+# # Plot histograms
+# # Gumbel
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # GEV
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+
+par(mfrow = c(1,2))
+
+# Let's look at the data
+h = hist(small_df[,2], breaks = 25, xlab = "Modeled Values", main = "Multivariate CAViaR")
+# Overset a density function
+xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
+lines(xfit, yfit, col="blue", lwd=2)
+# Overset a normal density function
+xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
+yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
+lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
+
+# Add a legend
+legend("topleft", legend = c("Normal", "Skew Normal"), col = c("blue", "red"), lty = c(1,2), lwd = c(2,2))
+
+
+
+# Let's look at the second set of data
+h = hist(small_df[,3], breaks = 25, xlab = "Modeled Values", main = "Univariate CAViaR")
+# Overset a density function - Skew Normal
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="blue", lwd=2)
+# Overset a density function - Gumbel
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="red", lwd=2)
+# Overset a density function - GEV
+xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+lines(xfit, yfit, col="green", lwd=2)
+
+# Add a legend
+legend("topleft", legend = c("Skew Normal", "Gumbel", "GEV"), col = c("blue", "red", "green"), lty = c(1,1,1), lwd = c(2,2,2))
+
+# par(mfrow = c(1,3))
+# 
+# # Let's look at the data
+# h = hist(small_df[,2], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+# yfit = dsnorm(xfit, mean = m1$par[1], sd = m1$par[2], xi = m1$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,2])
+# lines(xfit, yfit, col="blue", lwd=2)
+# # Overset a normal density function
+# xfit<-seq(min(small_df[,2]),max(small_df[,2]),length=250)
+# yfit_n = dnorm(xfit, mean = mean(small_df[,2]), sd = sd(small_df[,2]))
+# yfit_n <- yfit_n*diff(h$mids[1:2])*length(small_df[,2])
+# lines(xfit, yfit_n, col="red", lwd=2, lty = 2)
+# 
+# # Let's look at the second set of data
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dsnorm(xfit, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # # Let's look at the second set of data
+# # h = hist(square_val, breaks = 25)
+# # # Overset a density function
+# # xfit<-seq(min(square_val),max(square_val),length=250)
+# # yfit = dsnorm(xfit, mean = m3$par[1], sd = m3$par[2], xi = m3$par[3])
+# # yfit <- yfit*diff(h$mids[1:2])*length(square_val)
+# # lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # Let's look at the second set of data
+# h = hist(t3, breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(t3),max(t3),length=250)
+# yfit = dsnorm(xfit, mean = m4$par[1], sd = m4$par[2], xi = m4$par[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(t3)
+# lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+
+
+```{r}
+# # Fit a gumbel function
+# gum_param = gum.fit(small_df[,3])
+# gum_param$mle
+# 
+# # Try fitting a GEV distribution
+# gev_param = gev.fit(small_df[,3])
+# gev_param$mle
+# 
+# # Plot histograms
+# # Gumbel
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgumbel(xfit, loc = gum_param$mle[1], scale = gum_param$mle[2])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+# 
+# # GEV
+# h = hist(small_df[,3], breaks = 25)
+# # Overset a density function
+# xfit<-seq(min(small_df[,3]),max(small_df[,3]),length=250)
+# yfit = dgev(xfit, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+# yfit <- yfit*diff(h$mids[1:2])*length(small_df[,3])
+# lines(xfit, yfit, col="blue", lwd=2)
+
+```
+
+To fit the above histograms,the optimal parameters were fit using maximum likelihood. Note that while there were convergence issues used in fitting the skew-normal distribution, there were not issues with fitting the Gumbel or the GEV distributions.
+
+```{r}
+# Below are the optimal parameters for the second model
+norm_param_df = as.data.frame(cbind(mean(small_df[,2]),sd(small_df[,2])))
+rownames(norm_param_df) <- c("Optimal Parameters")
+colnames(norm_param_df) <- c("Mean", "Standard Deviation")
+
+# Display a pretty table
+norm_param_df %>% kable(caption = "Optimal Parameters for the Normal Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "The Mean Was Estimated Using the Sample Mean, SD was Estimated Using Sample Std. Dev.")
+
+# Rewrite m2 as the optimal parameters of skew normal
+sn_params = m2$par
+
+# Display the optimal skew-normal parameters
+sn_param_df = as.matrix(t(sn_params))
+# sn_param_df
+# rownames(sn_param_df) <- c("Optimal Parameters")
+# colnames(sn_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+# sn_param_df %>% kable(caption = "Optimal Parameters for the Skew Normal Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+# gum_param$mle
+
+# Display the optimal Gumbel parameters
+gum_param_df = as.matrix(t(c(gum_param$mle,0)))
+# gum_param_df
+# rownames(gum_param_df) <- c("Optimal Parameters")
+# colnames(gum_param_df) <- c("Location", "Scale")
+
+# Display a pretty table
+# gum_param_df %>% kable(caption = "Optimal Parameters for the Gumbel Distribution", digits = 4) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
+# Take out the optimal parameters
+gev_param_df = as.matrix(t(gev_param$mle))
+# rownames(gev_param_df) <- c("Optimal Parameters")
+# colnames(gev_param_df) <- c("Location", "Scale", "Shape")
+
+# Display a pretty table
+# gev_param_df %>% kable(caption = "Optimal Parameters for the Generalized Extreme Value Distribution", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+# Combine all of the extreme value distributions together
+ev_param_df = as.data.frame(rbind(sn_param_df, gum_param_df, gev_param_df))
+rownames(ev_param_df) <- c("Skew Normal", "Gumbel", "GEV")
+colnames(ev_param_df) <- c("Location", "Scale", "Shape")
+
+# Add a missing value for Gumbel shape
+ev_param_df[2,3] <- NA
+
+# Display a pretty table
+ev_param_df %>% kable(caption = "Optimal Parameters for the Candidate Distributions", digits = 3) %>% kable_styling("striped", full_width = F) %>% kable_styling() %>% footnote(general = "Estimated Using Maximum Likelihood")
+
+
+```
+
+To evaluate the model fit more rigorously, I compared the Kullback-Leibler divergence for each theoretical distribution.
+
+```{r}
+# First, find the density of the data
+m3_den = hist(small_df[,3], breaks = 25, freq = FALSE, plot = FALSE)
+# ?hist
+# m3_den$density
+
+# Rewrite m2 as the optimal parameters of skew normal
+# sn_params = m2$par
+# sn_params
+
+# Next compute the probability at each point for the fitted models
+## Skew-normal
+skn_den = dsnorm(m3_den$mids, mean = m2$par[1], sd = m2$par[2], xi = m2$par[3])
+## Gumbel
+gumb_den = dgumbel(m3_den$mids, loc = gum_param$mle[1], scale = gum_param$mle[2])
+## GEV
+gev_den = dgev(m3_den$mids, loc = gev_param$mle[1], scale = gev_param$mle[2], shape = gev_param$mle[3])
+
+# Calculate the K-L divergences for each
+kl_skn = KLD(m3_den$density, skn_den)
+kl_gumb = KLD(m3_den$density, gumb_den)
+kl_gev = KLD(m3_den$density, gev_den)
+
+# Combine into a data frame
+kl_df = as.data.frame(cbind(kl_skn$mean.sum.KLD, kl_gumb$mean.sum.KLD, kl_gev$mean.sum.KLD))
+
+rownames(kl_df) <- c("Mean Sum K-L Divergence")
+colnames(kl_df) <- c("Skew-Normal", "Gumbel", "GEV")
+
+# Display a pretty table
+kl_df %>% kable(caption = "Comparing K-L Divergences By Model Fits", digits = 2) %>% kable_styling("striped", full_width = F) %>% kable_styling() 
 ```
 
 ```{r}

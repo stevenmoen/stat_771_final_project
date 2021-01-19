@@ -966,23 +966,26 @@ abc$Location
 #' @param prior_prob - prior probability
 #' @param irr_dist - the irrational distribution. Right now, this code is only set up to work with Gumbel
 #' @param rat_dist - rational distribution. Right now, only designed for normal.
+#' @param rat_opt_param - optimal paramaters for the rational distribution. For 2008, it was a normal.
+#' @param irr_opt_param - optimal parameters for the irrational distribution. For 2008, it was a Gumbel
 #'
-#' @return
+#' @return - the probabilities in a nicely formatted table
 #' @export
 #'
-#' @examples
-hmm_fit = function(input_df, t_prob, prior_prob, irr_dist = "Gumbel", rat_dist = "Normal"){
+#' @examples - hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel")
+hmm_fit = function(input_df, t_prob, prior_prob, rat_opt_param, irr_opt_param, irr_dist = "Gumbel", rat_dist = "Normal"){
   # Set a value of T and K
   T = nrow(input_df)
   K = ncol(input_df) - 1
   # Initialize optimal parameters for rational and irrational datasets
-  rat_opt_param = opt_param_df[c(rat_dist),]
-  irr_opt_param = opt_param_df[c(irr_dist),]
-  print(rat_opt_param)
+  rat_opt_param = rat_opt_param[c(rat_dist),]
+  irr_opt_param = irr_opt_param[c(irr_dist),]
+  # print(rat_opt_param)
   # Encode the prior
   prior = c(prior_prob, 1- prior_prob) #Assumed prior distribution on Z_1
   # Assign a value of P - the transition matrix
   P = cbind(c(1-t_prob,t_prob),c(t_prob,1-t_prob))
+  # print("Stop 1")
   # Initialize alpha[1,]
   for(k in 1:K){
     if (k == 1){
@@ -1029,6 +1032,7 @@ hmm_fit = function(input_df, t_prob, prior_prob, irr_dist = "Gumbel", rat_dist =
   for(k in 1:K){
     beta[T,k] = 1
   }
+  # print("Stop 2")
   # Backwards algorithm
   for(t in (T-1):1){
     for(k in 1:K){
@@ -1056,15 +1060,34 @@ hmm_fit = function(input_df, t_prob, prior_prob, irr_dist = "Gumbel", rat_dist =
   }
   # Lastly, we need to solve for the posterior
   ab = alpha*beta
+  # print(prob)
   prob = ab/rowSums(ab)
   # Plot the Data  
   plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability")
-  # lines(Z==2,col=2,lwd=2)
+  # Beautify the probabilities
+  prob_df = as.data.frame(prob)
+  # Bolt on dates
+  # prob_df = cbind(index(input_df), prob_df)
+  # Add column names
+  colnames(prob_df) <- c("Rational", "Irrational")
+  # print(dim(input_df))
+  # print(length(index(input_df)))
+  # print(prob_df)
+  # Add rownames
+  rownames(prob_df) <- index(input_df)
+  # colnames(prob_df) <- c("Dates","Rational", "Irrational")
+  # print(cbind(input_df, prob_df))
+  return(list(probs = prob_df, alpha = alpha, beta = beta))
 }
 ```
 
 ```{r}
-hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel")
+out = hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel", rat_opt_param = norm_param_df2, irr_opt_param = ev_param_df)
+# head(out)
+# rowSums(out)
+# index(small_df)
+
+# cbind(index(small_df), out)
 ```
 
 # FUNCTIONS
@@ -1339,29 +1362,43 @@ mv_cav_fit = function(input_df){
   return(output_df)
 }
 
-abc = mv_cav_fit(small_df1)
+def = mv_cav_fit(small_df1)
 small_df1[,2]
-# abc
+
+abc
+def
 
 
 ```
 
+```{r}
+opt_param_df
+```
+
+
 # MASTER FUNCTION
 
 ```{r}
-hmm_master = function(var_level, year, print_best_mods = 1, path = "/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/"){
+hmm_master = function(var_level, year, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel", rat_dist = "Normal",
+                      print_best_mods = 1, path = "/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/"){
   # First, pull the data
-  da1 = import_dat(var_level = var_level, year = year, path = filepath)
+  da1 = import_dat(var_level = var_level, year = year, path = path)
   # Second,  pick the best
   best = pick_best(da1$losses)
   # Third, subset the data
   small_da = small_df_fn(best, da1$preds, print_best_mods = print_best_mods)
-  # Fourth, find the optimal univariate parameters
+  # Fourth, find the optimal univariate parameters - the irrational ones
   # uv_cav_fit = function(input_df){
   opt_uv_param = uv_cav_fit(small_da)
-  # Fifth, find the optimal multivariate parameters
+  # Fifth, find the optimal multivariate parameters - the rational ones
   opt_mv_param = mv_cav_fit(small_da)
+  # Combine both into a nice little thing
   # Next, I will feed these into the hmm_fit function, deciding to choose the params based on K-L divergence
+  out = hmm_fit(input_df = small_da, t_prob = t_prob, prior_prob = prior_prob, irr_dist = irr_dist,
+                rat_dist = rat_dist, rat_opt_param = opt_mv_param, irr_opt_param = opt_uv_param)
+  # Return out
+  return(out)
+  # hmm_fit = function(input_df, t_prob, prior_prob, irr_dist = "Gumbel", rat_dist = "Normal"){
   # Stopping point for 1/17/2021
   # JUNK
 
@@ -1415,8 +1452,46 @@ hmm_master = function(var_level, year, print_best_mods = 1, path = "/Users/steve
 #   return(c(rat_min, irr_min))
 # }
 
-best = pick_best(dat1$losses)
+# best = pick_best(dat1$losses)
 }
+```
+
+# RESULTS FROM MASTER FUNCTION
+
+## 2008
+
+
+```{r}
+res_2008_1pc_10tp = hmm_master(1, 2008, t_prob = 0.10)
+res_2008_5pc_10tp = hmm_master(5, 2008, t_prob = 0.10)
+res_2008_10pc_10tp = hmm_master(10, 2008, t_prob = 0.10)
+```
+
+## 2010
+
+
+```{r}
+res_2008_1pc_10tp = hmm_master(1, 2010, t_prob = 0.10)
+res_2008_5pc_10tp = hmm_master(5, 2010, t_prob = 0.10)
+res_2008_10pc_10tp = hmm_master(10, 2010, t_prob = 0.10)
+```
+
+## 2014
+
+
+```{r}
+res_2008_1pc_10tp = hmm_master(1, 2014, t_prob = 0.10)
+res_2008_5pc_10tp = hmm_master(5, 2014, t_prob = 0.10)
+res_2008_10pc_10tp = hmm_master(10, 2014, t_prob = 0.10)
+```
+
+## 2016
+
+
+```{r}
+res_2008_1pc_10tp = hmm_master(1, 2016, t_prob = 0.10)
+res_2008_5pc_10tp = hmm_master(5, 2016, t_prob = 0.10)
+res_2008_10pc_10tp = hmm_master(10, 2016, t_prob = 0.10)
 ```
 
 

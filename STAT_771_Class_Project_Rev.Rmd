@@ -968,12 +968,13 @@ abc$Location
 #' @param rat_dist - rational distribution. Right now, only designed for normal.
 #' @param rat_opt_param - optimal paramaters for the rational distribution. For 2008, it was a normal.
 #' @param irr_opt_param - optimal parameters for the irrational distribution. For 2008, it was a Gumbel
+#' @param var_level - the VaR level used in the plot
 #'
 #' @return - the probabilities in a nicely formatted table
 #' @export
 #'
 #' @examples - hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel")
-hmm_fit = function(input_df, t_prob, prior_prob, rat_opt_param, irr_opt_param, irr_dist = "Gumbel", rat_dist = "Normal"){
+hmm_fit = function(input_df, t_prob, prior_prob, rat_opt_param, irr_opt_param, irr_dist = "Gumbel", rat_dist = "Normal", var_level){
   # Set a value of T and K
   T = nrow(input_df)
   K = ncol(input_df) - 1
@@ -1063,7 +1064,8 @@ hmm_fit = function(input_df, t_prob, prior_prob, rat_opt_param, irr_opt_param, i
   # print(prob)
   prob = ab/rowSums(ab)
   # Plot the Data  
-  plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability")
+  plot(prob[,2],type="l",ylim=c(0,1), main="Chance the World is in an Irrational State",lwd=2,ylab="Posterior Probability",
+       xlab = paste0("The 250 Trading Days from ", min(index(input_df)), " to ", max(index(input_df))), sub = paste0("The Probability of Transition is ", t_prob*100, "%; VaR Level is ", var_level, "%"))
   # Beautify the probabilities
   prob_df = as.data.frame(prob)
   # Bolt on dates
@@ -1082,7 +1084,7 @@ hmm_fit = function(input_df, t_prob, prior_prob, rat_opt_param, irr_opt_param, i
 ```
 
 ```{r}
-out = hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel", rat_opt_param = norm_param_df2, irr_opt_param = ev_param_df)
+out = hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel", rat_opt_param = norm_param_df2, irr_opt_param = ev_param_df, var_level = 1)
 # head(out)
 # rowSums(out)
 # index(small_df)
@@ -1379,6 +1381,21 @@ opt_param_df
 # MASTER FUNCTION
 
 ```{r}
+#' This is the master function that runs everything
+#'
+#' @param var_level - the VaR level used to pull in theesis data
+#' @param year - the year of thesis data to pull in
+#' @param t_prob - the probability of transition
+#' @param prior_prob - the prior probability
+#' @param irr_dist - the irrational distribution. The default is Gunmbel
+#' @param rat_dist - the rational distribution. The default is Normal
+#' @param print_best_mods - do you print the best models?
+#' @param path - filepath to where the all ETF runs are stored. Don't modify this without a good reason.
+#'
+#' @return - a list of the probabilities, the alphas, and the betas
+#' @export
+#'
+#' @examples - res_2008_1pc_1tp = hmm_master(1, 2008, t_prob = 0.01)
 hmm_master = function(var_level, year, t_prob = 0.1, prior_prob = 0.5, irr_dist = "Gumbel", rat_dist = "Normal",
                       print_best_mods = 1, path = "/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/"){
   # First, pull the data
@@ -1395,7 +1412,7 @@ hmm_master = function(var_level, year, t_prob = 0.1, prior_prob = 0.5, irr_dist 
   # Combine both into a nice little thing
   # Next, I will feed these into the hmm_fit function, deciding to choose the params based on K-L divergence
   out = hmm_fit(input_df = small_da, t_prob = t_prob, prior_prob = prior_prob, irr_dist = irr_dist,
-                rat_dist = rat_dist, rat_opt_param = opt_mv_param, irr_opt_param = opt_uv_param)
+                rat_dist = rat_dist, rat_opt_param = opt_mv_param, irr_opt_param = opt_uv_param, var_level = var_level)
   # Return out
   return(out)
   # hmm_fit = function(input_df, t_prob, prior_prob, irr_dist = "Gumbel", rat_dist = "Normal"){
@@ -1460,6 +1477,26 @@ hmm_master = function(var_level, year, t_prob = 0.1, prior_prob = 0.5, irr_dist 
 
 ## 2008
 
+### 1% TP
+
+```{r}
+res_2008_1pc_1tp = hmm_master(1, 2008, t_prob = 0.01)
+res_2008_5pc_1tp = hmm_master(5, 2008, t_prob = 0.01)
+res_2008_10pc_1tp = hmm_master(10, 2008, t_prob = 0.01)
+
+# res_2008_1pc_1tp$
+```
+
+### 5% TP
+
+```{r}
+res_2008_1pc_5tp = hmm_master(1, 2008, t_prob = 0.05)
+res_2008_5pc_5tp = hmm_master(5, 2008, t_prob = 0.05)
+res_2008_10pc_5tp = hmm_master(10, 2008, t_prob = 0.05)
+```
+
+
+### 10% TP
 
 ```{r}
 res_2008_1pc_10tp = hmm_master(1, 2008, t_prob = 0.10)
@@ -1467,31 +1504,47 @@ res_2008_5pc_10tp = hmm_master(5, 2008, t_prob = 0.10)
 res_2008_10pc_10tp = hmm_master(10, 2008, t_prob = 0.10)
 ```
 
+### 20% TP
+
+```{r}
+res_2008_1pc_20tp = hmm_master(1, 2008, t_prob = 0.20)
+res_2008_5pc_20tp = hmm_master(5, 2008, t_prob = 0.20)
+res_2008_10pc_20tp = hmm_master(10, 2008, t_prob = 0.20)
+```
+
+### 33% TP
+
+```{r}
+res_2008_1pc_33tp = hmm_master(1, 2008, t_prob = 0.33)
+res_2008_5pc_33tp = hmm_master(5, 2008, t_prob = 0.33)
+res_2008_10pc_33tp = hmm_master(10, 2008, t_prob = 0.33)
+```
+
 ## 2010
 
 
 ```{r}
-res_2008_1pc_10tp = hmm_master(1, 2010, t_prob = 0.10)
-res_2008_5pc_10tp = hmm_master(5, 2010, t_prob = 0.10)
-res_2008_10pc_10tp = hmm_master(10, 2010, t_prob = 0.10)
+res_2010_1pc_10tp = hmm_master(1, 2010, t_prob = 0.10)
+res_2010_5pc_10tp = hmm_master(5, 2010, t_prob = 0.10)
+res_2010_10pc_10tp = hmm_master(10, 2010, t_prob = 0.10)
 ```
 
 ## 2014
 
 
 ```{r}
-res_2008_1pc_10tp = hmm_master(1, 2014, t_prob = 0.10)
-res_2008_5pc_10tp = hmm_master(5, 2014, t_prob = 0.10)
-res_2008_10pc_10tp = hmm_master(10, 2014, t_prob = 0.10)
+res_2014_1pc_10tp = hmm_master(1, 2014, t_prob = 0.10)
+res_2014_5pc_10tp = hmm_master(5, 2014, t_prob = 0.10)
+res_2014_10pc_10tp = hmm_master(10, 2014, t_prob = 0.10)
 ```
 
 ## 2016
 
 
 ```{r}
-res_2008_1pc_10tp = hmm_master(1, 2016, t_prob = 0.10)
-res_2008_5pc_10tp = hmm_master(5, 2016, t_prob = 0.10)
-res_2008_10pc_10tp = hmm_master(10, 2016, t_prob = 0.10)
+res_2016_1pc_10tp = hmm_master(1, 2016, t_prob = 0.10)
+res_2016_5pc_10tp = hmm_master(5, 2016, t_prob = 0.10)
+res_2016_10pc_10tp = hmm_master(10, 2016, t_prob = 0.10)
 ```
 
 

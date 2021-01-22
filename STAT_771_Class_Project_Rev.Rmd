@@ -293,7 +293,7 @@ Below is the notation used later in this paper. Items 2 - 5 listed below are new
 8. Ind. GARCH: Univariate CAViaR Model with indirect GARCH framework
 9. Adaptive: Univariate CAViaR Model with adaptive  slope framework
 
-```{r, results=  'asis'}
+```{r, results= 'asis'}
 # Call the above function to import data from my thesis
 v1_2008_alletf = var_input_disp("/Users/stevenmoen/Documents/GitHub/CAViaR_MS_thesis/Data_Export/SPY_all_ETF_runs/","var_1pc_2008_all_etf.csv", 0.01, print_graph = 1, print_mv_table = 0, print_uv_table = 0, print_opt_param =0)
 
@@ -1365,16 +1365,16 @@ mv_cav_fit = function(input_df){
 }
 
 def = mv_cav_fit(small_df1)
-small_df1[,2]
-
-abc
-def
-
+# small_df1[,2]
+# 
+# abc
+# def
+# 
 
 ```
 
 ```{r}
-opt_param_df
+# opt_param_df
 ```
 
 
@@ -1479,7 +1479,7 @@ hmm_master = function(var_level, year, t_prob = 0.1, prior_prob = 0.5, irr_dist 
 
 ### 1% TP
 
-```{r}
+```{r, results=  'asis'}
 res_2008_1pc_1tp = hmm_master(1, 2008, t_prob = 0.01)
 res_2008_5pc_1tp = hmm_master(5, 2008, t_prob = 0.01)
 res_2008_10pc_1tp = hmm_master(10, 2008, t_prob = 0.01)
@@ -1487,65 +1487,6 @@ res_2008_10pc_1tp = hmm_master(10, 2008, t_prob = 0.01)
 # res_2008_1pc_1tp$
 ```
 
-### 5% TP
-
-```{r}
-res_2008_1pc_5tp = hmm_master(1, 2008, t_prob = 0.05)
-res_2008_5pc_5tp = hmm_master(5, 2008, t_prob = 0.05)
-res_2008_10pc_5tp = hmm_master(10, 2008, t_prob = 0.05)
-```
-
-
-### 10% TP
-
-```{r}
-res_2008_1pc_10tp = hmm_master(1, 2008, t_prob = 0.10)
-res_2008_5pc_10tp = hmm_master(5, 2008, t_prob = 0.10)
-res_2008_10pc_10tp = hmm_master(10, 2008, t_prob = 0.10)
-```
-
-### 20% TP
-
-```{r}
-res_2008_1pc_20tp = hmm_master(1, 2008, t_prob = 0.20)
-res_2008_5pc_20tp = hmm_master(5, 2008, t_prob = 0.20)
-res_2008_10pc_20tp = hmm_master(10, 2008, t_prob = 0.20)
-```
-
-### 33% TP
-
-```{r}
-res_2008_1pc_33tp = hmm_master(1, 2008, t_prob = 0.33)
-res_2008_5pc_33tp = hmm_master(5, 2008, t_prob = 0.33)
-res_2008_10pc_33tp = hmm_master(10, 2008, t_prob = 0.33)
-```
-
-## 2010
-
-
-```{r}
-res_2010_1pc_10tp = hmm_master(1, 2010, t_prob = 0.10)
-res_2010_5pc_10tp = hmm_master(5, 2010, t_prob = 0.10)
-res_2010_10pc_10tp = hmm_master(10, 2010, t_prob = 0.10)
-```
-
-## 2014
-
-
-```{r}
-res_2014_1pc_10tp = hmm_master(1, 2014, t_prob = 0.10)
-res_2014_5pc_10tp = hmm_master(5, 2014, t_prob = 0.10)
-res_2014_10pc_10tp = hmm_master(10, 2014, t_prob = 0.10)
-```
-
-## 2016
-
-
-```{r}
-res_2016_1pc_10tp = hmm_master(1, 2016, t_prob = 0.10)
-res_2016_5pc_10tp = hmm_master(5, 2016, t_prob = 0.10)
-res_2016_10pc_10tp = hmm_master(10, 2016, t_prob = 0.10)
-```
 
 
 ```{r}
@@ -3497,6 +3438,67 @@ While future work in this area would benefit greatly from a variational autoenco
 
 
 # Appendix
+
+
+### 5% TP
+
+```{r}
+res_2008_1pc_5tp = hmm_master(1, 2008, t_prob = 0.05)
+res_2008_5pc_5tp = hmm_master(5, 2008, t_prob = 0.05)
+res_2008_10pc_5tp = hmm_master(10, 2008, t_prob = 0.05)
+```
+
+
+### 10% TP
+
+```{r}
+res_2008_1pc_10tp = hmm_master(1, 2008, t_prob = 0.10)
+res_2008_5pc_10tp = hmm_master(5, 2008, t_prob = 0.10)
+res_2008_10pc_10tp = hmm_master(10, 2008, t_prob = 0.10)
+```
+
+### 20% TP
+
+```{r}
+res_2008_1pc_20tp = hmm_master(1, 2008, t_prob = 0.20)
+res_2008_5pc_20tp = hmm_master(5, 2008, t_prob = 0.20)
+res_2008_10pc_20tp = hmm_master(10, 2008, t_prob = 0.20)
+```
+
+### 33% TP
+
+```{r}
+res_2008_1pc_33tp = hmm_master(1, 2008, t_prob = 0.33)
+res_2008_5pc_33tp = hmm_master(5, 2008, t_prob = 0.33)
+res_2008_10pc_33tp = hmm_master(10, 2008, t_prob = 0.33)
+```
+
+## 2010
+
+
+```{r}
+res_2010_1pc_10tp = hmm_master(1, 2010, t_prob = 0.10)
+res_2010_5pc_10tp = hmm_master(5, 2010, t_prob = 0.10)
+res_2010_10pc_10tp = hmm_master(10, 2010, t_prob = 0.10)
+```
+
+## 2014
+
+
+```{r}
+res_2014_1pc_10tp = hmm_master(1, 2014, t_prob = 0.10)
+res_2014_5pc_10tp = hmm_master(5, 2014, t_prob = 0.10)
+res_2014_10pc_10tp = hmm_master(10, 2014, t_prob = 0.10)
+```
+
+## 2016
+
+
+```{r}
+res_2016_1pc_10tp = hmm_master(1, 2016, t_prob = 0.10)
+res_2016_5pc_10tp = hmm_master(5, 2016, t_prob = 0.10)
+res_2016_10pc_10tp = hmm_master(10, 2016, t_prob = 0.10)
+```
 
 
 ## U.S. ETFs Results for the 2011 - 2012

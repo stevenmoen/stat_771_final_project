@@ -1,7 +1,7 @@
 ---
 title: 'STAT 771 - Project Final Draft'
 author: "Steven Moen"
-date: "Sunday, November 29th, 2020"
+date: "Friday, February 12th, 2021"
 output:
   pdf_document: default
   html_notebook: default
@@ -1092,7 +1092,6 @@ out = hmm_fit(input_df = small_df, t_prob = 0.1, prior_prob = 0.5, irr_dist = "G
 # cbind(index(small_df), out)
 ```
 
-# FUNCTIONS
 
 
 ```{r, results=  'asis'}
